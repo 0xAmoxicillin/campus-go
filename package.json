@@ -1,0 +1,24 @@
+{
+  "name": "campus-go",
+  "version": "0.1.0",
+  "private": true,
+  "description": "校园行 CampusGo · monorepo 根工作区（M1 全栈/测试：根 workspace / CI 门禁 / E2E 骨架 / 版本一致性）",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "lint": "pnpm -r run --if-present lint",
+    "typecheck": "pnpm -r run --if-present typecheck",
+    "test": "pnpm -r run --if-present test",
+    "build": "pnpm -r run --if-present build",
+    "test:e2e": "playwright test --config scripts/e2e/playwright.config.ts",
+    "check:versions": "bash scripts/check-version-consistency.sh"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "20.19.9",
+    "typescript": "5.9.2"
+  }
+}

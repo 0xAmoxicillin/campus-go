@@ -1,0 +1,69 @@
+# 校园行 CampusGo · 一键本地环境（M1）
+#
+# 用法：cp .env.example .env && docker compose up -d
+# 校验：docker compose config
+#
+# 变量全部来自 .env（见 .env.example 占位符），本文件不写任何明文密码。
+# M1 仅要求 PostgreSQL 16 可用（供后端 Prisma 连接）；server / web 为预留服务，
+# 归属 backend / frontend 各自的 apps/** 目录，镜像与构建在 M2 接入，故置于
+# "apps" profile 下：默认 `docker compose up` 不会尝试构建还不存在的镜像，
+# `docker compose --profile apps up` 才会在对应 Dockerfile 就位后启用。
+# TODO(M2): 后端/前端补 Dockerfile 后，去掉 profiles 并填入真实 build/image。
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: campus-go-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-campusgo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 必须在 .env 中设置}
+      POSTGRES_DB: ${POSTGRES_DB:-campusgo}
+    ports:
+      # 与 .env.example 的 DATABASE_URL / 契约保持一致：localhost:5432
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-campusgo} -d ${POSTGRES_DB:-campusgo}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # TODO(M2): 对接 apps/server 的 Dockerfile / NestJS 构建。
+  server:
+    profiles: ["apps"]
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile
+    container_name: campus-go-server
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-campusgo}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 必须在 .env 中设置}@postgres:5432/${POSTGRES_DB:-campusgo}?schema=public
+      SERVER_PORT: ${SERVER_PORT:-3001}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET 必须在 .env 中设置}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET 必须在 .env 中设置}
+    ports:
+      - "${SERVER_PORT:-3001}:${SERVER_PORT:-3001}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # TODO(M2): 对接 apps/web 的 Dockerfile / Vite 构建。
+  web:
+    profiles: ["apps"]
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: campus-go-web
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3001/api}
+    ports:
+      - "${WEB_PORT:-5173}:${WEB_PORT:-5173}"
+    depends_on:
+      - server
+
+volumes:
+  postgres-data:

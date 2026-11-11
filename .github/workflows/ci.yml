@@ -1,4 +1,5 @@
 name: CI
+
 on:
   push:
     branches: [main, develop, 'feature/**', 'fix/**']
@@ -10,22 +11,82 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 版本一致性检查需要能读取 tag 与 origin/develop，取全量历史与引用。
+          fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      # 不写死 version：让 action-setup 读取根 package.json 的
+      # "packageManager": "pnpm@9.15.9"，避免 "Multiple versions of pnpm specified"。
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      # M0 基准阶段尚无 package.json：跳过安装/构建，保持门禁绿色。
-      # 各应用接入 package.json 后，自动执行真实 lint / 类型检查 / 测试 / 构建。
-      - name: Quality gate
+
+      # ------------------------------------------------------------------
+      # M1 并行建包：三个 package.json 在三个并行 PR 里分别创建，
+      # 此刻不存在一份覆盖全部工作区的权威 lockfile。
+      # 因此 M1 用 --no-frozen-lockfile 允许按当前工作区解析依赖；
+      # M2 三方合并到 develop、工作区稳定后再切回 --frozen-lockfile。
+      # ------------------------------------------------------------------
+      - name: Install (no-frozen during M1 parallel package creation)
+        run: pnpm install --no-frozen-lockfile
+
+      # ------------------------------------------------------------------
+      # 真实门禁前置步骤（install 之后、Lint 之前，顺序固定）：
+      # 干净 checkout 里 packages/shared/dist 不存在（.gitignore 忽略 dist/），
+      # 而 @campus-go/server 的 typecheck/test/build 都 import @campus-go/shared，
+      # 其 main/types 指向 dist/index.js；不先产出 dist 会报 TS2307 / Cannot find module。
+      # @prisma/client 未 generate 时 Jest 报 did not initialize yet，5 个用例全崩。
+      # 两者缺其一，合并后第一跑就是红的。
+      # 注意：仅根包形态（三方合并前）下这两个包尚不存在，--filter 无匹配返回 0，
+      # 不误报失败；合并后三包齐全时才真正产出 dist / 初始化 Prisma Client。
+      # ------------------------------------------------------------------
+      - name: Build shared package (prerequisite for server imports)
+        run: pnpm --filter @campus-go/shared run build
+      - name: Generate Prisma Client (prerequisite for server tests)
+        run: pnpm --filter @campus-go/server exec prisma generate
+
+      # 报告当前工作区识别到的包数量；仅根 package.json / 三包齐全 两种形态
+      # 都靠 `pnpm -r run --if-present <script>` 兼容：无匹配脚本的包被跳过，
+      # 零子包时 pnpm 返回 0（不因 glob 无匹配而失败）。
+      # --if-present 必须放在 run 之后、脚本名之前；放在末尾会被透传给脚本本身
+      # （eslint / tsc / echo 收到未知参数而失败），这是合并态门禁「绿跳」的根因。
+      - name: Report workspace shape
         run: |
-          if [ -f package.json ]; then
-            pnpm install --frozen-lockfile
-            pnpm -r run lint --if-present
-            pnpm -r run typecheck --if-present
-            pnpm -r run test --if-present
-            pnpm -r run build --if-present
-          else
-            echo "M0 baseline: no package.json yet; gate will activate on feature PRs."
-          fi
+          echo "Workspace packages detected:"
+          pnpm -r list --depth -1 2>/dev/null || echo "(root only — quality scripts will be skipped by --if-present)"
+
+      - name: Lint
+        run: pnpm -r run --if-present lint
+      - name: Typecheck
+        run: pnpm -r run --if-present typecheck
+      - name: Test
+        run: pnpm -r run --if-present test
+      - name: Build
+        run: pnpm -r run --if-present build
+
+      # ------------------------------------------------------------------
+      # E2E 骨架：M1 无真实后端，测试用 page.route / route.fulfill 拦截层喂入
+      # 符合契约的 fixture，本地与 CI 均可独立全绿；TODO(M3) 改打真实服务。
+      # ------------------------------------------------------------------
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: E2E (contract fixtures via route interception)
+        run: pnpm run test:e2e
+
+      # ------------------------------------------------------------------
+      # 版本一致性：M1 仅作非阻塞报告（feature HEAD 本就与 develop 不同）。
+      # M3 改造成「三方 HEAD 同一提交才放行」的硬门禁。
+      # continue-on-error 保证该报告永不阻断 CI；即便脚本自身异常也不误报失败。
+      # ------------------------------------------------------------------
+      - name: Version consistency report (non-blocking, M1)
+        continue-on-error: true
+        run: bash scripts/check-version-consistency.sh
+
+  # 真实质量门禁在三方 feature 合并到 develop 后生效，但并非「合并即自动绿」：
+  # 届时 apps/*/packages/* 均有 package.json 且定义了 lint/typecheck/test/build，
+  # 上面的 `pnpm -r run --if-present <script>` 才会对每个包执行真实检查；
+  # 要跑通必须带上面两个前置步骤（shared build 产出 dist + prisma generate 初始化 Client），
+  # 否则 server 的 typecheck/test/build 会因缺 dist / 缺 Prisma Client 直接失败。
+  # 合并前仅根包存在时，四步为 no-op（pnpm 返回 0），CI 绿不代表真实检查通过。

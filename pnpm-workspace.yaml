@@ -1,0 +1,8 @@
+# pnpm 工作区定义：覆盖 apps/* 与 packages/* 两个包族。
+# 包名：@campus-go/shared / @campus-go/server / @campus-go/web，跨包依赖用 workspace:*。
+# M1 三方并行建包时，apps/*、packages/* 下可能暂时没有 package.json；
+# pnpm -r run <script> --if-present 在「零子包」时返回 0（不误报失败），
+# 在「三包齐全」时执行各包同名 script，门禁自动生效。
+packages:
+  - 'apps/*'
+  - 'packages/*'

@@ -13,3 +13,8 @@ coverage/
 playwright-report/
 test-results/
 docker/postgres/data/
+# ---- M1 全栈/测试补充：Playwright / pnpm / 本地环境产物 ----
+playwright/.cache/
+blob-report/
+.pnpm-store/
+*.local
