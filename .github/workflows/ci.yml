@@ -1,9 +1,10 @@
 name: CI
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, 'feature/**', 'fix/**']
   pull_request:
     branches: [main, develop]
+
 jobs:
   quality-gate:
     runs-on: ubuntu-latest
@@ -12,6 +13,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      # M0 基线阶段尚无 package.json，各应用接入后启用安装/构建/测试
-      - name: Placeholder (enable install/lint/test on feature PRs)
-        run: echo "CI gate active; package scripts wired by feature PRs"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      # M0 基准阶段尚无 package.json：跳过安装/构建，保持门禁绿色。
+      # 各应用接入 package.json 后，自动执行真实 lint / 类型检查 / 测试 / 构建。
+      - name: Quality gate
+        run: |
+          if [ -f package.json ]; then
+            pnpm install --frozen-lockfile
+            pnpm -r run lint --if-present
+            pnpm -r run typecheck --if-present
+            pnpm -r run test --if-present
+            pnpm -r run build --if-present
+          else
+            echo "M0 baseline: no package.json yet; gate will activate on feature PRs."
+          fi
