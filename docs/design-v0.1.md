@@ -5,7 +5,7 @@
 >
 > ## 定稿记录（2026-11-11）
 > - 用户拍板：**后台深度 = B**（真实用户管理 + 活动/资讯 CRUD 后台）；其余（技术栈、官网栏目、普通用户能力、仓库定稿后建、本地 `docker compose up` 交付）按推荐默认走。
-> - M0 已完成：私有仓 `https://github.com/0xAmoxicillin/campus-go.git` 已建；`main` / `develop` / `v0.1-baseline` 对齐同一提交 `76bfc3e3169d041dff5cf760597dbc503e5326ce`；`.env.example` 已改为显式占位符、从未提交真实密钥；CI（GitHub Actions）在私有仓可用且已 4 次绿色。
+> - M0 已完成：私有仓 `https://github.com/0xAmoxicillin/campus-go.git` 已建；骨架提交 `76bfc3e` 起 `main` / `develop` / 基准 tag 对齐；随后补入定稿文档、`docs/api-contract-v0.1.md`（统一接口契约）、`docs/collaboration-v0.1.md`（协作与 PR 规范）与 CI 门禁，**最终基准 `v0.1-baseline` / `main` / `develop` 统一指向含上述规范的提交**（以远程仓为准，三方一律从此取码）；`.env.example` 已改为显式占位符、从未提交真实密钥；CI（GitHub Actions）在私有仓可用且已多次绿色。
 > - ⚠️ **环境偏差**：私有仓 + 免费套餐下，GitHub 分支保护与 Rulesets API 均返回 403（提示「Upgrade to GitHub Pro or make this repository public」）。故 §2 的「分支保护」无法由平台强制实现；改为**流程门禁**：全员禁止直接 push `main` / `develop`，一律 `feature/*` → 对 `develop` 开 PR → CI 绿 + 项目组长逐行 Review 批准后才合入，合并由项目组长执行。若需平台硬保护，需用户升级 GitHub Pro（或改公开仓，但与「私有」要求冲突）。
 > - M1/M2 任务已按「契约先行、前端先 mock 并行」派发：后端先交 `packages/shared` + Prisma schema + 接口契约；前端并行做设计系统与官网静态页；全栈做一键环境、CI 门禁、E2E 骨架与版本一致性校验。
 
