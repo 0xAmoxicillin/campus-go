@@ -1,0 +1,17 @@
+name: CI
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # M0 基线阶段尚无 package.json，各应用接入后启用安装/构建/测试
+      - name: Placeholder (enable install/lint/test on feature PRs)
+        run: echo "CI gate active; package scripts wired by feature PRs"
