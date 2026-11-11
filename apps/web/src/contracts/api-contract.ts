@@ -179,6 +179,8 @@ export interface CreateActivityRequest {
   startAt: string;
   endAt: string;
   capacity: number;
+  /** 可选：创建时直接指定初始状态（默认 DRAFT）。 */
+  status?: ActivityStatus;
 }
 
 export interface CreatePostRequest {
@@ -186,6 +188,30 @@ export interface CreatePostRequest {
   summary: string;
   content: string;
   coverUrl: string;
+  /** 可选：创建时直接指定初始状态（默认 DRAFT）。 */
+  status?: PostStatus;
+}
+
+/** 活动编辑请求（契约 §3.4：PATCH /admin/activities/:id，字段同创建但均可选）。 */
+export interface UpdateActivityRequest {
+  title?: string;
+  summary?: string;
+  content?: string;
+  coverUrl?: string;
+  location?: string;
+  startAt?: string;
+  endAt?: string;
+  capacity?: number;
+  status?: ActivityStatus;
+}
+
+/** 资讯编辑请求（契约 §3.4：PATCH /admin/posts/:id，字段同创建但均可选）。 */
+export interface UpdatePostRequest {
+  title?: string;
+  summary?: string;
+  content?: string;
+  coverUrl?: string;
+  status?: PostStatus;
 }
 
 // ---------------------------------------------------------------------------

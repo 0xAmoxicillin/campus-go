@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { authApi, usersApi, adminApi, activitiesApi, postsApi } from '@/api';
 import { clearTokens } from '@/api/tokenStore';
 import { ApiError } from '@/api/errors';
-import { ErrorCode } from '@/contracts/api-contract';
+import { ErrorCode, ActivityStatus, PostStatus } from '@/contracts/api-contract';
 import { DEMO_PASSWORD } from '@/api/mock/mockData';
 
 beforeEach(() => clearTokens());
@@ -76,5 +76,62 @@ describe('统一响应体 / 分页 / 错误码（docs/api-contract-v0.1.md §0�
     const res = await postsApi.list({ pageSize: 2 });
     expect(res).toHaveProperty('total');
     expect(res).toHaveProperty('pageSize', 2);
+  });
+
+  it('ADMIN 新建活动（含状态）→ 返回含 id 的 activity，且 status 生效', async () => {
+    await authApi.login({ email: 'admin@campusgo.local', password: DEMO_PASSWORD });
+    const created = await adminApi.createActivity({
+      title: '测试活动', summary: 's', content: 'c',
+      coverUrl: 'https://x.test/cover.png', location: 'L', startAt: '2026-12-01T01:00:00.000Z',
+      endAt: '2026-12-01T03:00:00.000Z', capacity: 10, status: ActivityStatus.PUBLISHED,
+    });
+    expect(created.id).toMatch(/^c/);
+    expect(created.status).toBe('PUBLISHED');
+  });
+
+  it('ADMIN 编辑活动（PATCH 部分字段）→ 仅更新传入字段', async () => {
+    await authApi.login({ email: 'admin@campusgo.local', password: DEMO_PASSWORD });
+    const list = await adminApi.listActivities({ pageSize: 1 });
+    const id = list.items[0].id;
+    const updated = await adminApi.updateActivity(id, { title: '改名后的活动', status: ActivityStatus.ARCHIVED });
+    expect(updated.title).toBe('改名后的活动');
+    expect(updated.status).toBe('ARCHIVED');
+  });
+
+  it('ADMIN 删除活动 → 后续列表不再包含该 id', async () => {
+    await authApi.login({ email: 'admin@campusgo.local', password: DEMO_PASSWORD });
+    const created = await adminApi.createActivity({
+      title: '待删除活动', summary: 's', content: 'c',
+      coverUrl: 'https://x.test/cover.png', location: 'L', startAt: '2026-12-01T01:00:00.000Z',
+      endAt: '2026-12-01T03:00:00.000Z', capacity: 5,
+    });
+    await adminApi.deleteActivity(created.id);
+    const list = await adminApi.listActivities({ pageSize: 50 });
+    expect(list.items.find((a) => a.id === created.id)).toBeUndefined();
+  });
+
+  it('ADMIN 新建并编辑/删除资讯（PATCH 部分字段）', async () => {
+    await authApi.login({ email: 'admin@campusgo.local', password: DEMO_PASSWORD });
+    const created = await adminApi.createPost({
+      title: '测试资讯', summary: 's', content: 'c',
+      coverUrl: 'https://x.test/cover.png', status: PostStatus.DRAFT,
+    });
+    const updated = await adminApi.updatePost(created.id, { title: '改名后的资讯', status: PostStatus.PUBLISHED });
+    expect(updated.title).toBe('改名后的资讯');
+    expect(updated.status).toBe('PUBLISHED');
+    await adminApi.deletePost(created.id);
+    const list = await adminApi.listPosts({ pageSize: 50 });
+    expect(list.items.find((p) => p.id === created.id)).toBeUndefined();
+  });
+
+  it('USER 试图创建活动 → 40300（RBAC 红线）', async () => {
+    await authApi.login({ email: 'alice@campusgo.local', password: DEMO_PASSWORD });
+    await expect(
+      adminApi.createActivity({
+        title: 'x', summary: 's', content: 'c',
+        coverUrl: 'https://x.test/cover.png', location: 'L', startAt: '2026-12-01T01:00:00.000Z',
+        endAt: '2026-12-01T03:00:00.000Z', capacity: 5,
+      }),
+    ).rejects.toMatchObject({ code: ErrorCode.FORBIDDEN });
   });
 });

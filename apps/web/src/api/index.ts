@@ -11,7 +11,9 @@ import {
   type PostView,
   type RefreshRequest,
   type RegisterRequest,
+  type UpdateActivityRequest,
   type UpdateMeRequest,
+  type UpdatePostRequest,
   type UserView,
 } from '@/contracts/api-contract';
 import { apiClient } from './apiClient';
@@ -82,7 +84,7 @@ export const postsApi = {
   },
 };
 
-// 后台骨架（M1 仅前端表单 + 路由守卫；真实提交由 M2 后端实现）。
+// 后台（M2：完整 CRUD，真实接口 + mock 回退共用同一份契约形态）。
 export const adminApi = {
   listUsers(query: ListQuery = {}): Promise<Paginated<UserView>> {
     const qs = toQuery(query);
@@ -104,6 +106,16 @@ export const adminApi = {
       .request<ActivityView>('/admin/activities', { method: 'POST', auth: true, body })
       .then((r) => r.data);
   },
+  updateActivity(id: string, body: UpdateActivityRequest): Promise<ActivityView> {
+    return apiClient
+      .request<ActivityView>(`/admin/activities/${id}`, { method: 'PATCH', auth: true, body })
+      .then((r) => r.data);
+  },
+  deleteActivity(id: string): Promise<void> {
+    return apiClient
+      .request<null>(`/admin/activities/${id}`, { method: 'DELETE', auth: true })
+      .then(() => undefined);
+  },
   listPosts(query: ListQuery = {}): Promise<Paginated<PostView>> {
     const qs = toQuery(query);
     return apiClient.request<Paginated<PostView>>(`/admin/posts${qs}`, { method: 'GET', auth: true }).then((r) => r.data);
@@ -112,6 +124,16 @@ export const adminApi = {
     return apiClient
       .request<PostView>('/admin/posts', { method: 'POST', auth: true, body })
       .then((r) => r.data);
+  },
+  updatePost(id: string, body: UpdatePostRequest): Promise<PostView> {
+    return apiClient
+      .request<PostView>(`/admin/posts/${id}`, { method: 'PATCH', auth: true, body })
+      .then((r) => r.data);
+  },
+  deletePost(id: string): Promise<void> {
+    return apiClient
+      .request<null>(`/admin/posts/${id}`, { method: 'DELETE', auth: true })
+      .then(() => undefined);
   },
 };
 

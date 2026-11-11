@@ -18,7 +18,9 @@ import {
   type PostView,
   type RefreshRequest,
   type RegisterRequest,
+  type UpdateActivityRequest,
   type UpdateMeRequest,
+  type UpdatePostRequest,
   type UserView,
   UserStatus,
   type AdminUpdateUserRequest,
@@ -276,7 +278,7 @@ async function handle(path: string, init: AdapterRequestInit = {}): Promise<ApiR
         id: mockCuid('ck_act_'),
         title: b.title, summary: b.summary, content: b.content, coverUrl: b.coverUrl,
         location: b.location, startAt: b.startAt, endAt: b.endAt, capacity: b.capacity,
-        status: ActivityStatus.DRAFT, createdById: admin.id,
+        status: b.status ?? ActivityStatus.DRAFT, createdById: admin.id,
         createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       };
       activities.push(act);
@@ -286,7 +288,13 @@ async function handle(path: string, init: AdapterRequestInit = {}): Promise<ApiR
       const id = routePath.split('/')[3];
       const act = activities.find((a) => a.id === id);
       if (!act) throw new ApiError(ErrorCode.NOT_FOUND, '活动不存在');
-      return ok(act);
+      const b = body as unknown as UpdateActivityRequest;
+      const fields: (keyof UpdateActivityRequest)[] = [
+        'title', 'summary', 'content', 'coverUrl', 'location', 'startAt', 'endAt', 'capacity', 'status',
+      ];
+      for (const f of fields) if (b[f] !== undefined) (act as unknown as Record<string, unknown>)[f] = b[f];
+      act.updatedAt = new Date().toISOString();
+      return ok({ ...act });
     }
     if (routePath.startsWith('/admin/activities/') && method === 'DELETE') {
       const id = routePath.split('/')[3];
@@ -305,8 +313,9 @@ async function handle(path: string, init: AdapterRequestInit = {}): Promise<ApiR
       const p: PostView = {
         id: mockCuid('ck_post_'),
         title: b.title, summary: b.summary, content: b.content, coverUrl: b.coverUrl,
-        status: PostStatus.DRAFT, createdById: admin.id,
-        createdAt: new Date().toISOString(), publishedAt: '',
+        status: b.status ?? PostStatus.DRAFT, createdById: admin.id,
+        createdAt: new Date().toISOString(),
+        publishedAt: b.status === PostStatus.PUBLISHED ? new Date().toISOString() : '',
       };
       posts.push(p);
       return ok(p);
@@ -315,7 +324,11 @@ async function handle(path: string, init: AdapterRequestInit = {}): Promise<ApiR
       const id = routePath.split('/')[3];
       const p = posts.find((x) => x.id === id);
       if (!p) throw new ApiError(ErrorCode.NOT_FOUND, '资讯不存在');
-      return ok(p);
+      const b = body as unknown as UpdatePostRequest;
+      const fields: (keyof UpdatePostRequest)[] = ['title', 'summary', 'content', 'coverUrl', 'status'];
+      for (const f of fields) if (b[f] !== undefined) (p as unknown as Record<string, unknown>)[f] = b[f];
+      if (b.status === PostStatus.PUBLISHED && !p.publishedAt) p.publishedAt = new Date().toISOString();
+      return ok({ ...p });
     }
     if (path.startsWith('/admin/posts/') && method === 'DELETE') {
       const id = routePath.split('/')[3];

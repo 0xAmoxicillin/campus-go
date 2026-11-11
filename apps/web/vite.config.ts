@@ -21,5 +21,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: false,
+    // 契约测试针对 mock adapter 形态；真实后端不在测试环境，故固定走 mock。
+    // 默认运行（无 VITE_USE_MOCK）仍走真实 HTTP（见 apiClient.ts），此处仅覆盖契约测试。
+    env: { VITE_USE_MOCK: 'true' },
   },
 });
