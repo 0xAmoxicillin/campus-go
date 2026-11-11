@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =====================================================================
+   设计令牌（CSS 变量）— 见 docs/design-v0.1.md §6
+   浅色为默认主题；.dark 切换深色（M1 先做浅色，深色变量已就绪）。
+   立体手法：玻璃拟态 + 多层景深 + 3D tilt/视差 + 微动效。
+   ===================================================================== */
+:root {
+  /* 主色：靛蓝 → 青绿（120deg 渐变两端） */
+  --brand-50: 238 245 255;
+  --brand-100: 224 234 255;
+  --brand-200: 199 214 255;
+  --brand-300: 165 186 255;
+  --brand-400: 124 151 250;
+  --brand-500: 88 116 245;
+  --brand-600: 67 92 228;
+  --brand-700: 54 74 196;
+  --brand-800: 44 60 165;
+  --brand-900: 35 48 130;
+  --teal-400: 45 212 191;
+  --teal-500: 20 184 166;
+  --teal-600: 13 148 136;
+  /* 暖橙点缀 */
+  --accent-400: 251 146 60;
+  --accent-500: 249 115 22;
+  --accent-600: 234 88 12;
+
+  /* 文本 / 表面 / 分割线 */
+  --ink: 23 28 52;
+  --ink-soft: 71 80 112;
+  --ink-faint: 130 138 168;
+  --surface: 255 255 255;
+  --surface-soft: 247 249 255;
+  --line: 226 231 244;
+  --shadow: 34 44 92;
+
+  /* 背景：浅色用柔和渐变 + 极淡网格 */
+  --bg: 244 247 255;
+  --glass: 255 255 255;
+  --glass-alpha: 0.6;
+}
+
+.dark {
+  --ink: 233 238 255;
+  --ink-soft: 176 184 214;
+  --ink-faint: 124 132 166;
+  --surface: 17 22 43;
+  --surface-soft: 23 29 54;
+  --line: 44 52 86;
+  --shadow: 4 8 24;
+  --bg: 10 14 30;
+  --glass: 30 38 70;
+  --glass-alpha: 0.5;
+}
+
+* {
+  border-color: rgb(var(--line));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 600px at 12% -10%, rgb(var(--brand-500) / 0.12), transparent 60%),
+    radial-gradient(1000px 500px at 100% 0%, rgb(var(--teal-500) / 0.10), transparent 55%),
+    rgb(var(--bg));
+  color: rgb(var(--ink));
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 玻璃拟态工具类 */
+@layer components {
+  .glass {
+    background: rgb(var(--glass) / var(--glass-alpha));
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgb(255 255 255 / 0.35);
+    box-shadow: 0 10px 24px rgb(var(--shadow) / 0.14), 0 24px 56px rgb(var(--shadow) / 0.18);
+  }
+  .dark .glass {
+    border-color: rgb(255 255 255 / 0.08);
+  }
+  .text-gradient {
+    background: linear-gradient(120deg, rgb(var(--brand-600)), rgb(var(--teal-500)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+/* 景深：多层投影由 shadow-depth-* 提供（见 tailwind config）。 */
+
+/* a11y：键盘可见焦点 */
+:focus-visible {
+  outline: 2px solid rgb(var(--brand-500));
+  outline-offset: 2px;
+}
+
+/* =====================================================================
+   动效降级（docs/design-v0.1.md §6 + 验收标准）：
+   prefers-reduced-motion 时关闭全部过渡 / 动画 / 视差与 3D tilt。
+   ===================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .parallax-layer,
+  [data-tilt] {
+    transform: none !important;
+  }
+}
