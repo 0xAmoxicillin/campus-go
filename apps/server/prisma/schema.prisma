@@ -1,0 +1,110 @@
+// Prisma schema —— 数据模型事实来源，与 docs/api-contract-v0.1.md §2 严格一致。
+// 数据库：PostgreSQL 16（docker-compose 由全栈提供）。
+// ⚠️ M1 交付：schema + 可重复执行的 migration；完整业务端点实现放 M2。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum ActivityStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  name         String
+  role         Role       @default(USER)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  refreshTokens RefreshToken[]
+  enrollments   Enrollment[]
+
+  @@index([role])
+  @@index([status])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Activity {
+  id          String         @id @default(cuid())
+  title       String
+  summary     String
+  content     String
+  coverUrl    String?
+  location    String?
+  startAt     DateTime
+  endAt       DateTime
+  capacity    Int?
+  status      ActivityStatus @default(DRAFT)
+  createdById String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  enrollments Enrollment[]
+
+  @@index([status])
+}
+
+model Post {
+  id          String      @id @default(cuid())
+  title       String
+  summary     String
+  content     String
+  coverUrl    String?
+  status      PostStatus  @default(DRAFT)
+  createdById String?
+  createdAt   DateTime    @default(now())
+  publishedAt DateTime?
+
+  @@index([status])
+}
+
+model Enrollment {
+  id         String   @id @default(cuid())
+  userId     String
+  activityId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, activityId])
+}
