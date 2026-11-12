@@ -2,7 +2,7 @@
   "name": "campus-go",
   "version": "0.1.0",
   "private": true,
-  "description": "校园行 CampusGo · monorepo 根工作区（M1 全栈/测试：根 workspace / CI 门禁 / E2E 骨架 / 版本一致性）",
+  "description": "校园行 CampusGo · monorepo 根工作区（M2 全栈/测试：真实服务 E2E / CI 门禁 / README / 离线产品演示）",
   "engines": {
     "node": ">=20",
     "pnpm": ">=9"
@@ -13,7 +13,9 @@
     "typecheck": "pnpm -r run --if-present typecheck",
     "test": "pnpm -r run --if-present test",
     "build": "pnpm -r run --if-present build",
-    "test:e2e": "playwright test --config scripts/e2e/playwright.config.ts",
+    "test:e2e": "pnpm run test:e2e:contract",
+    "test:e2e:contract": "playwright test --config scripts/e2e/playwright.config.ts",
+    "test:e2e:real": "E2E_MODE=real playwright test --config scripts/e2e/playwright.real.config.ts",
     "check:versions": "bash scripts/check-version-consistency.sh"
   },
   "devDependencies": {

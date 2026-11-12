@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>校园行 CampusGo · 官网展示模版 · 产品演示</title>
+<!--
+  校园行 CampusGo · 零依赖产品演示页（M2）
+  - 自包含：内联 CSS / JS / 合成数据，file:// 双击即开，不联网、不引 CDN、不引外部字体。
+  - 控制：空格暂停/继续，←/→ 切场景，1/1.5/2 倍速，R 重播；所有场景均可点击直达。
+  - 本页数据为演示用合成数据（docs/demo-script.md 分镜），不含任何真实账号、密钥或线上地址。
+  - 场景 01 官网浏览 / 02 注册登录 / 03 管理员后台 / 04 用户·活动·资讯管理 / 05 安全红线。
+-->
+<style>
+  :root {
+    --bg: #070b1a;
+    --bg-soft: #0d1430;
+    --ink: #eef2ff;
+    --ink-soft: #a9b4d8;
+    --ink-faint: #6b78a6;
+    --brand: #6366f1;
+    --brand-light: #a5b4fc;
+    --teal: #2dd4bf;
+    --amber: #fbbf24;
+    --danger: #fb7185;
+    --line: rgba(165, 180, 252, 0.18);
+    --glass: rgba(20, 28, 62, 0.72);
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    background:
+      radial-gradient(1100px 620px at 12% -10%, rgba(99, 102, 241, 0.30), transparent 60%),
+      radial-gradient(900px 560px at 92% 8%, rgba(45, 212, 191, 0.16), transparent 60%),
+      radial-gradient(800px 620px at 60% 110%, rgba(251, 191, 36, 0.10), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; }
+  .app { display: flex; flex-direction: column; height: 100%; }
+
+  /* ---------- 顶栏 ---------- */
+  header {
+    display: flex; align-items: center; gap: 18px;
+    padding: 14px 26px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(7, 11, 26, 0.72);
+    backdrop-filter: blur(14px);
+    flex: 0 0 auto;
+  }
+  .logo { display: flex; align-items: center; gap: 11px; min-width: 210px; }
+  .logo-mark {
+    width: 34px; height: 34px; border-radius: 11px;
+    background: linear-gradient(140deg, var(--brand), var(--teal));
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 17px; color: #fff;
+    box-shadow: 0 6px 22px rgba(99, 102, 241, 0.45);
+    transform: rotate(-6deg);
+  }
+  .logo-txt b { font-size: 16px; letter-spacing: 0.06em; }
+  .logo-txt span { display: block; font-size: 10px; color: var(--ink-faint); letter-spacing: 0.22em; }
+  .chapters { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
+  .chapter {
+    border: 1px solid var(--line);
+    background: transparent; color: var(--ink-faint);
+    padding: 7px 13px; border-radius: 999px; font-size: 12px;
+    cursor: pointer; transition: all .25s ease; white-space: nowrap;
+  }
+  .chapter:hover { color: var(--ink); border-color: rgba(165,180,252,.45); }
+  .chapter.active {
+    color: #fff; border-color: transparent;
+    background: linear-gradient(120deg, var(--brand), #4f46e5);
+    box-shadow: 0 4px 18px rgba(99,102,241,.42);
+  }
+  .progress-wrap { min-width: 150px; }
+  .progress-meta { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-faint); margin-bottom: 6px; font-family: var(--mono); }
+  .progress-track { height: 4px; border-radius: 4px; background: rgba(165,180,252,.15); overflow: hidden; }
+  .progress-bar { height: 100%; width: 0; border-radius: 4px; background: linear-gradient(90deg, var(--brand), var(--teal)); transition: width .18s linear; }
+
+  /* ---------- 舞台 ---------- */
+  main { flex: 1; position: relative; min-height: 0; padding: 20px 26px 8px; }
+  .scene {
+    position: absolute; inset: 20px 26px 8px;
+    display: none; opacity: 0;
+    grid-template-columns: 1fr 1fr; gap: 26px;
+    transition: opacity .45s ease;
+  }
+  .scene.on { display: grid; opacity: 1; }
+  .scene-left { display: flex; flex-direction: column; justify-content: center; padding: 0 12px; }
+  .scene-right { display: grid; place-items: center; min-width: 0; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; width: fit-content;
+    font-size: 11px; letter-spacing: .2em; color: var(--teal);
+    border: 1px solid rgba(45,212,191,.32); background: rgba(45,212,191,.07);
+    padding: 5px 12px; border-radius: 999px; margin-bottom: 20px;
+  }
+  .eyebrow i { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 10px var(--teal); }
+  h1 { font-size: clamp(28px, 3.4vw, 46px); line-height: 1.18; margin: 0 0 16px; letter-spacing: -.02em; }
+  h1 em { font-style: normal; background: linear-gradient(100deg, var(--brand-light), var(--teal)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .narration { font-size: clamp(14px, 1.35vw, 18px); line-height: 1.85; color: var(--ink-soft); max-width: 460px; min-height: 100px; }
+  .narration strong { color: var(--ink); font-weight: 600; }
+  .notes { margin-top: 22px; display: flex; flex-direction: column; gap: 9px; }
+  .note {
+    display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-faint);
+    opacity: 0; transform: translateX(-14px); transition: all .4s ease;
+  }
+  .note.show { opacity: 1; transform: none; }
+  .note b { color: var(--ink-soft); font-weight: 500; }
+  .note::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--brand-light); flex: 0 0 auto; }
+
+  /* ---------- 通用「产品截图」模拟 ---------- */
+  .frame {
+    width: min(100%, 530px); border-radius: 16px; overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--glass);
+    box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.03) inset;
+    backdrop-filter: blur(12px);
+  }
+  .frame-bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.025); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #f87171; }
+  .dot:nth-child(2) { background: #fbbf24; } .dot:nth-child(3) { background: #34d399; }
+  .url { margin-left: 12px; font: 10px var(--mono); color: var(--ink-faint); background: rgba(0,0,0,.25); padding: 4px 10px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .frame-body { padding: 18px; }
+
+  /* 官网场景 */
+  .site-nav { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--ink-faint); padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .site-nav b { color: var(--ink); font-size: 13px; }
+  .nav-links { display: flex; gap: 12px; }
+  .hero {
+    margin-top: 16px; padding: 26px 22px; border-radius: 12px;
+    background: linear-gradient(125deg, rgba(99,102,241,.28), rgba(45,212,191,.12));
+    border: 1px solid var(--line); position: relative; overflow: hidden;
+  }
+  .hero::after { content: ''; position: absolute; width: 180px; height: 180px; right: -40px; top: -60px; border-radius: 50%; background: radial-gradient(circle, rgba(165,180,252,.35), transparent 70%); }
+  .hero .kicker { font-size: 10px; letter-spacing: .22em; color: var(--teal); }
+  .hero h2 { margin: 10px 0 8px; font-size: 25px; line-height: 1.3; }
+  .hero p { margin: 0; font-size: 11px; color: var(--ink-soft); line-height: 1.7; }
+  .cta { display: inline-block; margin-top: 16px; padding: 8px 18px; border-radius: 8px; font-size: 11px; color: #fff; background: var(--brand); box-shadow: 0 8px 24px rgba(99,102,241,.4); }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .mini-card { border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: rgba(255,255,255,.025); transition: transform .5s ease, border-color .5s ease; }
+  .mini-card .cover { height: 44px; border-radius: 6px; margin-bottom: 9px; background: linear-gradient(135deg, #4338ca, #0f766e); }
+  .mini-card:nth-child(2) .cover { background: linear-gradient(135deg, #1d4ed8, #7c3aed); }
+  .mini-card:nth-child(3) .cover { background: linear-gradient(135deg, #b45309, #be123c); }
+  .mini-card b { display: block; font-size: 11px; margin-bottom: 5px; }
+  .mini-card span { display: block; font-size: 9px; color: var(--ink-faint); line-height: 1.5; }
+  .scene[data-idx="0"].playing .mini-card:nth-child(1) { transform: translateY(-6px); border-color: rgba(45,212,191,.5); }
+  .scene[data-idx="0"].playing .mini-card:nth-child(2) { transform: translateY(-6px); border-color: rgba(165,180,252,.5); transition-delay: .6s; }
+  .scene[data-idx="0"].playing .mini-card:nth-child(3) { transform: translateY(-6px); border-color: rgba(251,191,36,.5); transition-delay: 1.2s; }
+
+  /* 表单场景 */
+  .form-card { padding: 22px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 18px; }
+  .tab { flex: 1; text-align: center; padding: 8px; font-size: 11px; border-radius: 8px; color: var(--ink-faint); border: 1px solid var(--line); transition: all .3s; }
+  .tab.active { color: #fff; background: rgba(99,102,241,.35); border-color: rgba(165,180,252,.5); }
+  .fld { margin-bottom: 11px; }
+  .fld label { display: block; font-size: 10px; color: var(--ink-faint); margin-bottom: 5px; }
+  .fld .box { border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; font: 11px var(--mono); color: var(--ink-soft); background: rgba(0,0,0,.2); min-height: 33px; }
+  .fld .box.typing { border-color: var(--brand-light); color: #fff; }
+  .btn-primary { width: 100%; text-align: center; padding: 10px; border-radius: 8px; font-size: 12px; color: #fff; background: linear-gradient(120deg, var(--brand), #4f46e5); margin-top: 6px; transition: box-shadow .4s; }
+  .scene[data-idx="1"].playing .btn-primary { box-shadow: 0 0 0 4px rgba(99,102,241,.22), 0 10px 30px rgba(99,102,241,.5); }
+  .role-pills { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+  .pill { font-size: 10px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-faint); opacity: 0; transition: all .45s; white-space: nowrap; flex: 0 0 auto; }
+  .pill.show { opacity: 1; }
+  .pill.role-user { border-color: rgba(45,212,191,.5); color: var(--teal); background: rgba(45,212,191,.08); }
+  .pill.role-admin { border-color: rgba(251,191,36,.5); color: var(--amber); background: rgba(251,191,36,.08); }
+  .redline-note { margin-top: 14px; font-size: 10px; color: var(--danger); border-left: 2px solid var(--danger); padding-left: 9px; line-height: 1.6; opacity: 0; transition: opacity .5s; }
+  .redline-note.show { opacity: 1; }
+
+  /* 后台 dashboard 场景 */
+  .admin { display: grid; grid-template-columns: 112px 1fr; min-height: 250px; }
+  .sidebar { background: rgba(4, 8, 24, .55); border-right: 1px solid var(--line); padding: 14px 8px; }
+  .sidebar .sb-title { font: 9px var(--mono); color: var(--ink-faint); letter-spacing: .12em; padding: 0 6px 10px; }
+  .sb-item { font-size: 10px; color: var(--ink-faint); padding: 8px 9px; border-radius: 7px; margin-bottom: 3px; display: flex; align-items: center; gap: 7px; transition: all .35s; }
+  .sb-item i { width: 5px; height: 5px; border-radius: 2px; background: currentColor; opacity: .55; }
+  .sb-item.active { color: #fff; background: rgba(99,102,241,.3); }
+  .sb-item.dim { opacity: .45; }
+  .admin-main { padding: 14px; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .kpi { border: 1px solid var(--line); border-radius: 9px; padding: 10px; background: rgba(255,255,255,.02); }
+  .kpi span { display: block; font-size: 9px; color: var(--ink-faint); }
+  .kpi b { display: block; font-size: 19px; margin-top: 4px; font-family: var(--mono); }
+  .kpi:nth-child(1) b { color: var(--brand-light); } .kpi:nth-child(2) b { color: var(--teal); } .kpi:nth-child(3) b { color: var(--amber); }
+  .admin-table { margin-top: 12px; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; font-size: 10px; }
+  .tr { display: grid; grid-template-columns: 1.2fr 1.6fr .7fr .8fr; gap: 6px; padding: 7px 10px; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+  .tr:last-child { border-bottom: none; }
+  .tr.head { color: var(--ink-faint); background: rgba(255,255,255,.03); font-size: 9px; }
+  .badge { font-size: 9px; padding: 2px 7px; border-radius: 999px; }
+  .badge.on { background: rgba(45,212,191,.15); color: var(--teal); }
+  .badge.off { background: rgba(251,113,133,.15); color: var(--danger); }
+
+  /* CRUD 场景 */
+  .crud { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .crud-col { border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: rgba(255,255,255,.02); }
+  .crud-col h4 { margin: 0 0 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: center; }
+  .crud-col h4 span { font: 9px var(--mono); color: var(--ink-faint); font-weight: 400; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 10px; color: var(--ink-soft); padding: 8px 0; border-bottom: 1px dashed var(--line); }
+  .row:last-child { border-bottom: none; }
+  .row .ops { display: flex; gap: 5px; }
+  .op { font-size: 9px; padding: 3px 7px; border-radius: 5px; border: 1px solid var(--line); color: var(--ink-faint); }
+  .op.hl { border-color: var(--brand-light); color: #fff; background: rgba(99,102,241,.3); }
+  .op.del { border-color: rgba(251,113,133,.5); color: var(--danger); }
+  .row.new { animation: rowIn .5s ease both; }
+  @keyframes rowIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+  .crud-log { margin-top: 12px; font: 10px var(--mono); color: var(--teal); min-height: 20px; }
+
+  /* 安全红线场景 */
+  .security { padding: 20px; }
+  .req { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 12px; font: 10px var(--mono); }
+  .req .line { padding: 8px 12px; display: flex; gap: 10px; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+  .req .line:last-child { border-bottom: none; }
+  .req .method { color: var(--brand-light); font-weight: 700; min-width: 42px; }
+  .req .path { color: var(--ink); }
+  .res { padding: 11px 12px; display: flex; align-items: center; gap: 10px; border-radius: 9px; margin-top: 8px; font: 10px var(--mono); opacity: 0; transform: translateY(8px); transition: all .45s; }
+  .res.show { opacity: 1; transform: none; }
+  .res.bad { background: rgba(251,113,133,.12); border: 1px solid rgba(251,113,133,.4); color: #fda4af; }
+  .res.good { background: rgba(45,212,191,.10); border: 1px solid rgba(45,212,191,.35); color: var(--teal); }
+  .res b { font-size: 13px; }
+  .shield { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.02); }
+  .shield-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(99,102,241,.22); color: var(--brand-light); font-size: 17px; flex: 0 0 auto; }
+  .shield p { margin: 0; font-size: 10px; color: var(--ink-soft); line-height: 1.7; }
+
+  /* ---------- 控制条 ---------- */
+  footer {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 14px;
+    padding: 12px 26px 16px; border-top: 1px solid var(--line);
+    background: rgba(7,11,26,.75); backdrop-filter: blur(14px); flex-wrap: wrap;
+  }
+  .ctrl { display: flex; align-items: center; gap: 7px; }
+  .cbtn {
+    border: 1px solid var(--line); background: rgba(255,255,255,.03); color: var(--ink-soft);
+    border-radius: 8px; padding: 7px 12px; font-size: 12px; cursor: pointer; transition: all .2s;
+  }
+  .cbtn:hover { color: #fff; border-color: rgba(165,180,252,.5); }
+  .cbtn.primary { background: rgba(99,102,241,.28); border-color: rgba(165,180,252,.45); color: #fff; min-width: 84px; }
+  .speed { display: flex; gap: 3px; }
+  .speed button { border: 1px solid var(--line); background: transparent; color: var(--ink-faint); padding: 6px 9px; font: 11px var(--mono); border-radius: 6px; cursor: pointer; }
+  .speed button.active { color: #fff; background: rgba(99,102,241,.35); border-color: rgba(165,180,252,.5); }
+  .hint { margin-left: auto; font-size: 10px; color: var(--ink-faint); line-height: 1.7; }
+  .hint kbd { font: 10px var(--mono); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; color: var(--ink-soft); }
+  .status { font: 10px var(--mono); color: var(--teal); min-width: 52px; }
+
+  @media (max-width: 900px) {
+    .scene { grid-template-columns: 1fr; gap: 10px; overflow-y: auto; }
+    .scene-left { justify-content: flex-start; padding: 0; }
+    .narration { min-height: 0; font-size: 13px; }
+    h1 { font-size: 26px; margin-bottom: 10px; }
+    .eyebrow { margin-bottom: 10px; }
+    .notes { margin-top: 12px; }
+    .progress-wrap, .hint { display: none; }
+    header { padding: 10px 14px; gap: 10px; }
+    main { padding: 12px 14px 6px; }
+    .scene { inset: 12px 14px 6px; }
+    footer { padding: 10px 14px 12px; }
+    .frame { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-mark">行</div>
+      <div class="logo-txt"><b>校园行 CampusGo</b><span>REUSABLE TEMPLATE DEMO · M2</span></div>
+    </div>
+    <nav class="chapters" id="chapters"></nav>
+    <div class="progress-wrap">
+      <div class="progress-meta"><span id="clock">00:00 / 00:00</span><span id="scene-count">01 / 05</span></div>
+      <div class="progress-track"><div class="progress-bar" id="progress"></div></div>
+    </div>
+  </header>
+
+  <main id="stage">
+    <!-- 场景 1：官网浏览 -->
+    <section class="scene" data-idx="0">
+      <div class="scene-left">
+        <div class="eyebrow"><i></i> 场景 01 · 官网浏览</div>
+        <h1>一套<em>拿来即套用</em>的官网展示模版</h1>
+        <p class="narration" id="n0"></p>
+        <div class="notes" id="notes0"></div>
+      </div>
+      <div class="scene-right">
+        <div class="frame">
+          <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url" id="url0">http://localhost:5173/</span></div>
+          <div class="frame-body">
+            <div class="site-nav"><b>校园行</b><div class="nav-links"><span>首页</span><span>活动</span><span>资讯</span><span>关于</span></div><span>登录 / 注册</span></div>
+            <div class="hero">
+              <div class="kicker">CAMPUS × LIFE</div>
+              <h2>让每一次出发<br />都有同行的人</h2>
+              <p>实验室漫游、城市骑行、通宵代码营——从一个想法到一次出发，把校园生活变得更好玩、更好记。</p>
+              <span class="cta">探索近期活动 →</span>
+            </div>
+            <div class="cards">
+              <div class="mini-card"><div class="cover"></div><b>校园迎新跑</b><span>环校 5km · 操场</span></div>
+              <div class="mini-card"><div class="cover"></div><b>实验室开放日</b><span>AI Lab · 报名中</span></div>
+              <div class="mini-card"><div class="cover"></div><b>城市骑行计划</b><span>11.20 · 已发布</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 场景 2：注册登录 -->
+    <section class="scene" data-idx="1">
+      <div class="scene-left">
+        <div class="eyebrow"><i></i> 场景 02 · 注册登录</div>
+        <h1>注册只产 USER，<em>管理员从不开公放</em></h1>
+        <p class="narration" id="n1"></p>
+        <div class="notes" id="notes1"></div>
+      </div>
+      <div class="scene-right">
+        <div class="frame">
+          <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">http://localhost:5173/register</span></div>
+          <div class="frame-body form-card">
+            <div class="tabs"><div class="tab active" id="tab-reg">注册</div><div class="tab" id="tab-login">登录</div></div>
+            <div class="fld"><label>邮箱</label><div class="box" id="fld-email">user@campusgo.local</div></div>
+            <div class="fld"><label>昵称</label><div class="box">校园用户</div></div>
+            <div class="fld"><label>密码（≥8 位，含大小写与数字）</label><div class="box" id="fld-pw">••••••••</div></div>
+            <div class="btn-primary" id="submit-btn">创建账号 · POST /api/auth/register</div>
+            <div class="role-pills">
+              <span class="pill role-user" id="pill-user">role = USER</span>
+              <span class="pill role-admin" id="pill-admin">role = ADMIN</span>
+            </div>
+            <div class="redline-note" id="reg-redline">安全红线：请求体即便带 role=ADMIN 也一律忽略；初始 ADMIN 只由服务端种子脚本创建。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 场景 3：管理员后台 -->
+    <section class="scene" data-idx="2">
+      <div class="scene-left">
+        <div class="eyebrow"><i></i> 场景 03 · 管理员后台</div>
+        <h1>左栏 dashboard，<em>全局尽在掌握</em></h1>
+        <p class="narration" id="n2"></p>
+        <div class="notes" id="notes2"></div>
+      </div>
+      <div class="scene-right">
+        <div class="frame">
+          <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">http://localhost:5173/admin</span></div>
+          <div class="frame-body" style="padding:0">
+            <div class="admin">
+              <div class="sidebar">
+                <div class="sb-title">CONSOLE</div>
+                <div class="sb-item active" id="sb0"><i></i>总览 Dashboard</div>
+                <div class="sb-item" id="sb1"><i></i>用户管理</div>
+                <div class="sb-item" id="sb2"><i></i>活动管理</div>
+                <div class="sb-item" id="sb3"><i></i>资讯管理</div>
+                <div class="sb-item dim"><i></i>系统设置</div>
+              </div>
+              <div class="admin-main">
+                <div class="kpis">
+                  <div class="kpi"><span>注册用户</span><b id="kpi-u">128</b></div>
+                  <div class="kpi"><span>进行中活动</span><b id="kpi-a">7</b></div>
+                  <div class="kpi"><span>已发资讯</span><b id="kpi-p">24</b></div>
+                </div>
+                <div class="admin-table">
+                  <div class="tr head"><span>昵称</span><span>邮箱</span><span>角色</span><span>状态</span></div>
+                  <div class="tr"><span>校园用户</span><span>user@campusgo.local</span><span>USER</span><span class="badge on">ACTIVE</span></div>
+                  <div class="tr"><span>小林同学</span><span>lin@campusgo.local</span><span>USER</span><span class="badge on">ACTIVE</span></div>
+                  <div class="tr"><span>管理员</span><span>admin@campusgo.local</span><span>ADMIN</span><span class="badge on">ACTIVE</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 场景 4：用户/活动/资讯管理 -->
+    <section class="scene" data-idx="3">
+      <div class="scene-left">
+        <div class="eyebrow"><i></i> 场景 04 · 用户 · 活动 · 资讯管理</div>
+        <h1>真实 CRUD，<em>从启停到发布</em></h1>
+        <p class="narration" id="n3"></p>
+        <div class="notes" id="notes3"></div>
+      </div>
+      <div class="scene-right">
+        <div class="frame">
+          <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">http://localhost:5173/admin · 内容管理</span></div>
+          <div class="frame-body">
+            <div class="crud">
+              <div class="crud-col">
+                <h4>活动管理 <span>/api/admin/activities</span></h4>
+                <div class="row"><span>校园迎新跑</span><span class="ops"><span class="op">编辑</span><span class="op del">删除</span></span></div>
+                <div class="row"><span>实验室开放日</span><span class="ops"><span class="op">编辑</span><span class="op del">删除</span></span></div>
+                <div class="row new" id="row-new" style="display:none"><span>城市骑行计划</span><span class="ops"><span class="op hl">已新建</span></span></div>
+                <div class="row" id="row-edit"><span id="edit-name">城市夜跑 · 第 2 期</span><span class="ops"><span class="op">编辑</span><span class="op del">删除</span></span></div>
+              </div>
+              <div class="crud-col">
+                <h4>资讯管理 <span>/api/admin/posts</span></h4>
+                <div class="row"><span>内测公告</span><span class="ops"><span class="op">编辑</span><span class="op del">删除</span></span></div>
+                <div class="row"><span>活动回顾合辑</span><span class="ops"><span class="op">编辑</span><span class="op del">删除</span></span></div>
+                <div class="row" style="color:var(--ink-faint)"><span>＋ 新建资讯</span><span class="ops"><span class="op">POST</span></span></div>
+              </div>
+            </div>
+            <div class="crud-log" id="crud-log"></div>
+            <div class="admin-table" style="margin-top:12px">
+              <div class="tr head"><span>用户</span><span>角色</span><span>状态</span><span>操作</span></div>
+              <div class="tr"><span>小林同学</span><span>USER</span><span id="user-status" class="badge on">ACTIVE</span><span class="op" id="toggle-btn">停用</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 场景 5：安全红线 -->
+    <section class="scene" data-idx="4">
+      <div class="scene-left">
+        <div class="eyebrow"><i></i> 场景 05 · 安全红线</div>
+        <h1>接口级 Guards，<em>越权一律 403</em></h1>
+        <p class="narration" id="n4"></p>
+        <div class="notes" id="notes4"></div>
+      </div>
+      <div class="scene-right">
+        <div class="frame">
+          <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">Network · /api/admin/users</span></div>
+          <div class="frame-body security">
+            <div class="req">
+              <div class="line"><span class="method">GET</span><span class="path">/api/admin/users</span><span>不带 Authorization</span></div>
+              <div class="line"><span class="method">GET</span><span class="path">/api/admin/users</span><span>Bearer &lt;USER accessToken&gt;</span></div>
+              <div class="line"><span class="method">GET</span><span class="path">/api/admin/users</span><span>Bearer &lt;ADMIN accessToken&gt;</span></div>
+            </div>
+            <div class="res bad" id="res401"><b>401</b><span>{ "code": 40100, "message": "未登录或 token 无效", "data": null }</span></div>
+            <div class="res bad" id="res403"><b>403</b><span>{ "code": 40300, "message": "权限不足", "data": null }</span></div>
+            <div class="res good" id="res200"><b>200</b><span>{ "code": 0, "message": "ok", "data": { "items": [...], "total": 3 } }</span></div>
+            <div class="shield">
+              <div class="shield-icon">⬡</div>
+              <p>JwtAuthGuard + RolesGuard 是安全边界；前端路由守卫只做体验分流。密码 bcrypt 哈希、JWT 短时 access + refresh 轮换、密钥不入库。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="ctrl">
+      <button class="cbtn" id="prev" title="上一场景（←）">◀ 上一场景</button>
+      <button class="cbtn primary" id="play" title="空格">⏸ 暂停</button>
+      <button class="cbtn" id="next" title="下一场景（→）">下一场景 ▶</button>
+      <button class="cbtn" id="replay" title="R">↺ 重播</button>
+    </div>
+    <div class="ctrl speed">倍速
+      <button data-speed="1" class="active">1×</button>
+      <button data-speed="1.5">1.5×</button>
+      <button data-speed="2">2×</button>
+    </div>
+    <span class="status" id="status">播放中</span>
+    <div class="hint"><kbd>空格</kbd> 暂停/继续 · <kbd>←</kbd><kbd>→</kbd> 切场景 · <kbd>1</kbd>/<kbd>2</kbd> 倍速 · <kbd>R</kbd> 重播 · 点击顶部章节直达<br />本页完全离线：内联合成数据，无 CDN、无外部字体、无网络请求。</div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---- 内联合成数据（演示专用；不含真实账号/密钥/线上地址） -----------------
+  var SCENES = [
+    {
+      title: '官网浏览',
+      duration: 9000,
+      narration: '这是一套<strong>校园官网展示模版</strong>：改品牌名、换文案、换内容数据就能直接套用到自己的社团 / 赛事 / 活动官网。3D 立体 Hero、活动与资讯卡片按契约从接口取数，列表只展示 <strong>PUBLISHED</strong> 内容。',
+      notes: [
+        '可复用：官网 + 登录注册 + RBAC 后台三块解耦，clone 即改',
+        '易改品牌：站名 / 导航 / 主色集中在 apps/web 与设计令牌',
+        '一键启动：docker compose + pnpm install 即可起全栈'
+      ]
+    },
+    {
+      title: '注册登录',
+      duration: 9500,
+      narration: '模板自带完整鉴权样板：密码 ≥8 位、<strong>bcrypt 哈希</strong> 落库，返回 user 视图与 access / refresh token。注册<strong>硬编码 role=USER</strong>，请求体带 role=ADMIN 也一律忽略——拿去复用时红线也已替你兜好。',
+      notes: [
+        'POST /api/auth/register → { user, accessToken, refreshToken }',
+        'POST /api/auth/login · refresh 轮换 · logout 吊销',
+        '初始 ADMIN 仅由 prisma/seed.ts 种子脚本创建'
+      ]
+    },
+    {
+      title: '管理员后台',
+      duration: 9500,
+      narration: '后台采用<strong>左栏模块导航 + 右栏内容区</strong>的 dashboard 版式，比堆叠式页面更好看也更好套用。KPI 与用户列表来自 <strong>/api/admin/**</strong>，每个请求都经 JwtAuthGuard + RolesGuard 双重校验。',
+      notes: [
+        'GET /api/admin/users · /activities · /posts（分页）',
+        '统一响应体 { code, message, data }，错误同步 code 语义',
+        '前端 AdminRoute 只做体验分流，接口层才是边界'
+      ]
+    },
+    {
+      title: '用户·活动·资讯管理',
+      duration: 10000,
+      narration: '内容不写死在页面里：用户启停、活动与资讯<strong>新建 / 编辑 / 删除</strong>都走真实接口，换成自己的数据源即可复用这套后台。删除返回 data:null，仍保持统一响应体。',
+      notes: [
+        'POST / PATCH / DELETE /api/admin/activities · /posts',
+        'PATCH /api/admin/users/:id 改 status / role（启停）',
+        '报名 POST /api/activities/:id/join 去重与容量 409'
+      ]
+    },
+    {
+      title: '安全红线',
+      duration: 10000,
+      narration: '模板把安全边界也一并交付：未登录 <strong>401 / 40100</strong>、USER 越权 <strong>403 / 40300</strong>、ADMIN 正常 200。前端路由守卫只做体验，<strong>接口级 Guards 才是边界</strong>；真实服务 E2E 对越权与 CRUD 做回归断言。',
+      notes: [
+        '拿来即套用：clone → 改品牌文案 → 换内容数据 → 启动',
+        'JWT 短时 access(15m) + refresh(7d) 轮换 · 密钥只从 .env 读',
+        '零后端看效果：VITE_USE_MOCK=true 或双击本演示页'
+      ]
+    }
+  ];
+
+  var TOTAL = SCENES.reduce(function (s, x) { return s + x.duration; }, 0);
+  var el = function (id) { return document.getElementById(id); };
+  var idx = 0, elapsed = 0, playing = true, speed = 1, last = 0, raf = null;
+  var scenes = Array.prototype.slice.call(document.querySelectorAll('.scene'));
+
+  // 顶部章节按钮
+  var chapters = el('chapters');
+  SCENES.forEach(function (s, i) {
+    var b = document.createElement('button');
+    b.className = 'chapter';
+    b.textContent = String(i + 1).padStart(2, '0') + ' · ' + s.title;
+    b.addEventListener('click', function () { goto(i, true); });
+    chapters.appendChild(b);
+  });
+  var chapterBtns = Array.prototype.slice.call(chapters.children);
+
+  function mmss(ms) {
+    var t = Math.floor(ms / 1000);
+    return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
+  }
+
+  function sceneStart(i) {
+    var t = 0;
+    for (var k = 0; k < i; k++) t += SCENES[k].duration;
+    return t;
+  }
+
+  // 每个场景内的逐字旁白 + 逐条要点 + 界面动画
+  function resetScene(i) {
+    var n = el('n' + i), notes = el('notes' + i);
+    if (n && n.firstChild && n.firstChild.nodeType === 3) n.removeChild(n.firstChild);
+    if (notes) notes.innerHTML = '';
+    // 场景专属元素复位
+    var ids = ['res401', 'res403', 'res200', 'row-new', 'crud-log', 'reg-redline', 'pill-user', 'pill-admin'];
+    ids.forEach(function (id) { var e = el(id); if (e) e.classList.remove('show'); });
+    if (el('row-new')) el('row-new').style.display = 'none';
+    if (el('fld-email')) { el('fld-email').textContent = 'user@campusgo.local'; el('fld-email').classList.remove('typing'); }
+    if (el('fld-pw')) el('fld-pw').classList.remove('typing');
+    if (el('user-status')) { el('user-status').textContent = 'ACTIVE'; el('user-status').className = 'badge on'; }
+    if (el('edit-name')) el('edit-name').textContent = '城市夜跑 · 第 2 期';
+    if (el('submit-btn')) el('submit-btn').textContent = '创建账号 · POST /api/auth/register';
+    if (el('tab-reg')) { el('tab-reg').classList.add('active'); el('tab-login').classList.remove('active'); }
+    ['sb0','sb1','sb2','sb3'].forEach(function (id) { var e = el(id); if (e) e.classList.remove('active'); });
+    if (el('sb0')) el('sb0').classList.add('active');
+  }
+
+  function animateScene(i, local) {
+    var scene = SCENES[i];
+    var n = el('n' + i);
+    // 逐字旁白
+    if (n) {
+      var chars = Math.min(scene.narration.length, Math.floor(local / 55));
+      n.innerHTML = scene.narration.slice(0, chars);
+    }
+    // 要点逐条出现
+    var notes = el('notes' + i);
+    if (notes) {
+      var want = Math.min(scene.notes.length, Math.floor(Math.max(0, local - 1200) / 1500) + 1);
+      if (notes.children.length !== want) {
+        notes.innerHTML = '';
+        for (var k = 0; k < want; k++) {
+          var d = document.createElement('div');
+          d.className = 'note show';
+          d.innerHTML = '<b>' + scene.notes[k] + '</b>';
+          notes.appendChild(d);
+        }
+      }
+    }
+    // 场景专属动效
+    if (i === 1) {
+      if (local > 900) { el('fld-email').classList.add('typing'); }
+      if (local > 2200) { el('fld-pw').textContent = 'Campus2026'; el('fld-pw').classList.add('typing'); }
+      if (local > 4200) { el('submit-btn').textContent = '✓ 201 Created · { code: 0, data: { user, tokens } }'; el('pill-user').classList.add('show'); }
+      if (local > 5600) { el('reg-redline').classList.add('show'); }
+      if (local > 7000) { el('tab-reg').classList.remove('active'); el('tab-login').classList.add('active'); el('submit-btn').textContent = '管理员登录 · POST /api/auth/login'; el('pill-admin').classList.add('show'); }
+    }
+    if (i === 2) {
+      var sb = Math.min(4, Math.floor(local / 2000));
+      ['sb0','sb1','sb2','sb3'].forEach(function (id, k) { el(id).classList.toggle('active', k === sb); });
+    }
+    if (i === 3) {
+      if (local > 1500) { el('row-new').style.display = 'flex'; el('crud-log').textContent = '> POST /api/admin/activities → 201 { code: 0, data: { activity } }'; }
+      if (local > 3800) { el('edit-name').textContent = '城市骑行计划 · 更新版'; el('crud-log').textContent = '> PATCH /api/admin/activities/:id → 200 { code: 0, data: { activity } }'; }
+      if (local > 6200) { el('user-status').textContent = 'DISABLED'; el('user-status').className = 'badge off'; el('toggle-btn').textContent = '已停用'; el('crud-log').textContent = '> PATCH /api/admin/users/:id → 200 { status: "DISABLED" }'; }
+      if (local > 8000) { el('crud-log').textContent = '> DELETE /api/admin/posts/:id → 200 { code: 0, data: null }'; }
+    }
+    if (i === 4) {
+      if (local > 1200) el('res401').classList.add('show');
+      if (local > 3600) el('res403').classList.add('show');
+      if (local > 6400) el('res200').classList.add('show');
+    }
+  }
+
+  function render() {
+    scenes.forEach(function (s, i) {
+      s.classList.toggle('on', i === idx);
+      s.classList.toggle('playing', i === idx && playing);
+    });
+    chapterBtns.forEach(function (b, i) { b.classList.toggle('active', i === idx); });
+    el('scene-count').textContent = String(idx + 1).padStart(2, '0') + ' / ' + String(SCENES.length).padStart(2, '0');
+    el('clock').textContent = mmss(elapsed) + ' / ' + mmss(TOTAL);
+    el('progress').style.width = (elapsed / TOTAL * 100).toFixed(2) + '%';
+    el('status').textContent = playing ? '播放中' : '已暂停';
+    el('play').textContent = playing ? '⏸ 暂停' : '▶ 继续';
+    animateScene(idx, elapsed - sceneStart(idx));
+  }
+
+  function goto(i, keepPlaying) {
+    idx = (i + SCENES.length) % SCENES.length;
+    elapsed = sceneStart(idx);
+    scenes.forEach(function (s, k) { if (k !== idx) s.classList.remove('playing'); });
+    resetScene(idx);
+    if (!keepPlaying) playing = false;
+    render();
+  }
+
+  function tick(now) {
+    if (!last) last = now;
+    var dt = Math.min(now - last, 100);
+    last = now;
+    if (playing) {
+      elapsed += dt * speed;
+      if (elapsed >= TOTAL) { elapsed = TOTAL; playing = false; }
+      var nextIdx = idx;
+      while (nextIdx + 1 < SCENES.length && elapsed >= sceneStart(nextIdx + 1)) nextIdx++;
+      if (nextIdx !== idx) { idx = nextIdx; resetScene(idx); }
+    }
+    render();
+    raf = requestAnimationFrame(tick);
+  }
+
+  el('play').addEventListener('click', function () {
+    if (elapsed >= TOTAL) { elapsed = 0; idx = 0; resetScene(0); }
+    playing = !playing; render();
+  });
+  el('prev').addEventListener('click', function () { goto(idx - 1, false); });
+  el('next').addEventListener('click', function () { goto(idx + 1, false); });
+  el('replay').addEventListener('click', function () { elapsed = 0; idx = 0; resetScene(0); playing = true; render(); });
+  Array.prototype.slice.call(document.querySelectorAll('.speed button')).forEach(function (b) {
+    b.addEventListener('click', function () {
+      speed = parseFloat(b.dataset.speed);
+      document.querySelectorAll('.speed button').forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.code === 'Space') { e.preventDefault(); el('play').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); goto(idx - 1, false); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); goto(idx + 1, false); }
+    else if (e.key === 'r' || e.key === 'R') { el('replay').click(); }
+    else if (e.key === '1') { document.querySelector('.speed button[data-speed="1"]').click(); }
+    else if (e.key === '2') { document.querySelector('.speed button[data-speed="2"]').click(); }
+  });
+
+  resetScene(0);
+  render();
+  raf = requestAnimationFrame(tick);
+  // 暴露给自动化截图/自测使用；不产生任何网络请求。
+  window.__campusDemo = {
+    goto: function (i) { goto(i, true); },
+    pause: function () { playing = false; render(); },
+    /** 定位到当前场景内的某个时间点（仅供离线截图/自测；不影响正常播放）。 */
+    seek: function (localMs) {
+      elapsed = sceneStart(idx) + Math.max(0, Math.min(localMs, SCENES[idx].duration - 1));
+      playing = false;
+      render();
+    },
+    state: function () { return { idx: idx, elapsed: elapsed, playing: playing, speed: speed, total: TOTAL }; }
+  };
+})();
+</script>
+</body>
+</html>
