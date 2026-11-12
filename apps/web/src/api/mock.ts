@@ -193,13 +193,13 @@ async function handle(path: string, init: AdapterRequestInit = {}): Promise<ApiR
 
   // ---- 用户自助（需登录）----
   if (routePath === '/users/me' && method === 'GET') {
-    return ok(publicUser(requireUser()));
+    return ok({ user: publicUser(requireUser()) });
   }
   if (routePath === '/users/me' && method === 'PATCH') {
     const u = requireUser();
     const { name } = body as unknown as UpdateMeRequest;
     if (name) u.name = name; // email/role/status 不可在此修改
-    return ok(publicUser(u));
+    return ok({ user: publicUser(u) });
   }
 
   // ---- 官网公开内容 ----
@@ -208,7 +208,7 @@ async function handle(path: string, init: AdapterRequestInit = {}): Promise<ApiR
     if (idMatch) {
       const act = activities.find((a) => a.id === idMatch[1] && a.status === ActivityStatus.PUBLISHED);
       if (!act) throw new ApiError(ErrorCode.NOT_FOUND, '活动不存在');
-      return ok(act);
+      return ok({ activity: act });
     }
     const q = parseQuery(path);
     const filtered = activities.filter(
@@ -229,7 +229,7 @@ async function handle(path: string, init: AdapterRequestInit = {}): Promise<ApiR
     if (enrolled >= act.capacity) throw new ApiError(ErrorCode.CONFLICT, '活动名额已满');
     const e: EnrollmentView = { id: mockCuid('ck_enr_'), userId: u.id, activityId: id, createdAt: new Date().toISOString() };
     enrollments.push(e);
-    return ok(e);
+    return ok({ enrollment: e });
   }
 
   if (routePath.startsWith('/posts') && method === 'GET') {
@@ -237,7 +237,7 @@ async function handle(path: string, init: AdapterRequestInit = {}): Promise<ApiR
     if (idMatch) {
       const p = posts.find((x) => x.id === idMatch[1] && x.status === PostStatus.PUBLISHED);
       if (!p) throw new ApiError(ErrorCode.NOT_FOUND, '资讯不存在');
-      return ok(p);
+      return ok({ post: p });
     }
     const q = parseQuery(path);
     const filtered = posts.filter(
@@ -265,7 +265,7 @@ async function handle(path: string, init: AdapterRequestInit = {}): Promise<ApiR
       const { status, role } = body as unknown as AdminUpdateUserRequest;
       if (status) u.status = status;
       if (role) u.role = role;
-      return ok(publicUser(u));
+      return ok({ user: publicUser(u) });
     }
     if (routePath === '/admin/activities' && method === 'GET') {
       const q = parseQuery(path);
@@ -282,7 +282,7 @@ async function handle(path: string, init: AdapterRequestInit = {}): Promise<ApiR
         createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       };
       activities.push(act);
-      return ok(act);
+      return ok({ activity: act });
     }
     if (routePath.startsWith('/admin/activities/') && method === 'PATCH') {
       const id = routePath.split('/')[3];
@@ -294,7 +294,7 @@ async function handle(path: string, init: AdapterRequestInit = {}): Promise<ApiR
       ];
       for (const f of fields) if (b[f] !== undefined) (act as unknown as Record<string, unknown>)[f] = b[f];
       act.updatedAt = new Date().toISOString();
-      return ok({ ...act });
+      return ok({ activity: { ...act } });
     }
     if (routePath.startsWith('/admin/activities/') && method === 'DELETE') {
       const id = routePath.split('/')[3];
@@ -318,7 +318,7 @@ async function handle(path: string, init: AdapterRequestInit = {}): Promise<ApiR
         publishedAt: b.status === PostStatus.PUBLISHED ? new Date().toISOString() : '',
       };
       posts.push(p);
-      return ok(p);
+      return ok({ post: p });
     }
     if (routePath.startsWith('/admin/posts/') && method === 'PATCH') {
       const id = routePath.split('/')[3];
@@ -328,7 +328,7 @@ async function handle(path: string, init: AdapterRequestInit = {}): Promise<ApiR
       const fields: (keyof UpdatePostRequest)[] = ['title', 'summary', 'content', 'coverUrl', 'status'];
       for (const f of fields) if (b[f] !== undefined) (p as unknown as Record<string, unknown>)[f] = b[f];
       if (b.status === PostStatus.PUBLISHED && !p.publishedAt) p.publishedAt = new Date().toISOString();
-      return ok({ ...p });
+      return ok({ post: { ...p } });
     }
     if (path.startsWith('/admin/posts/') && method === 'DELETE') {
       const id = routePath.split('/')[3];

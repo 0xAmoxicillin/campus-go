@@ -2,6 +2,7 @@ import {
   type ActivityView,
   type AdminUpdateUserRequest,
   type AuthResult,
+  type AuthTokens,
   type CreateActivityRequest,
   type CreatePostRequest,
   type EnrollmentView,
@@ -35,9 +36,9 @@ export const authApi = {
     setTokens(res.data.accessToken, res.data.refreshToken);
     return res.data;
   },
-  async refresh(): Promise<AuthResult> {
+  async refresh(): Promise<AuthTokens> {
     const refreshToken = getRefreshToken();
-    const res = await apiClient.request<AuthResult>('/auth/refresh', {
+    const res = await apiClient.request<AuthTokens>('/auth/refresh', {
       method: 'POST',
       body: { refreshToken } satisfies RefreshRequest,
     });
@@ -45,17 +46,19 @@ export const authApi = {
     return res.data;
   },
   async logout(): Promise<void> {
-    await apiClient.request<null>('/auth/logout', { method: 'POST', body: { refreshToken: getRefreshToken() } });
+    await apiClient.request<null>('/auth/logout', { method: 'POST', auth: true, body: { refreshToken: getRefreshToken() } });
     clearTokens();
   },
 };
 
 export const usersApi = {
   getMe(): Promise<UserView> {
-    return apiClient.request<UserView>('/users/me', { method: 'GET', auth: true }).then((r) => r.data);
+    return apiClient.request<{ user: UserView }>('/users/me', { method: 'GET', auth: true }).then((r) => r.data.user);
   },
   updateMe(body: UpdateMeRequest): Promise<UserView> {
-    return apiClient.request<UserView>('/users/me', { method: 'PATCH', auth: true, body }).then((r) => r.data);
+    return apiClient
+      .request<{ user: UserView }>('/users/me', { method: 'PATCH', auth: true, body })
+      .then((r) => r.data.user);
   },
 };
 
@@ -65,12 +68,12 @@ export const activitiesApi = {
     return apiClient.request<Paginated<ActivityView>>(`/activities${qs}`).then((r) => r.data);
   },
   get(id: string): Promise<ActivityView> {
-    return apiClient.request<ActivityView>(`/activities/${id}`).then((r) => r.data);
+    return apiClient.request<{ activity: ActivityView }>(`/activities/${id}`).then((r) => r.data.activity);
   },
   join(id: string): Promise<EnrollmentView> {
     return apiClient
-      .request<EnrollmentView>(`/activities/${id}/join`, { method: 'POST', auth: true })
-      .then((r) => r.data);
+      .request<{ enrollment: EnrollmentView }>(`/activities/${id}/join`, { method: 'POST', auth: true })
+      .then((r) => r.data.enrollment);
   },
 };
 
@@ -80,7 +83,7 @@ export const postsApi = {
     return apiClient.request<Paginated<PostView>>(`/posts${qs}`).then((r) => r.data);
   },
   get(id: string): Promise<PostView> {
-    return apiClient.request<PostView>(`/posts/${id}`).then((r) => r.data);
+    return apiClient.request<{ post: PostView }>(`/posts/${id}`).then((r) => r.data.post);
   },
 };
 
@@ -92,8 +95,8 @@ export const adminApi = {
   },
   updateUser(id: string, body: AdminUpdateUserRequest): Promise<UserView> {
     return apiClient
-      .request<UserView>(`/admin/users/${id}`, { method: 'PATCH', auth: true, body })
-      .then((r) => r.data);
+      .request<{ user: UserView }>(`/admin/users/${id}`, { method: 'PATCH', auth: true, body })
+      .then((r) => r.data.user);
   },
   listActivities(query: ListQuery = {}): Promise<Paginated<ActivityView>> {
     const qs = toQuery(query);
@@ -103,13 +106,13 @@ export const adminApi = {
   },
   createActivity(body: CreateActivityRequest): Promise<ActivityView> {
     return apiClient
-      .request<ActivityView>('/admin/activities', { method: 'POST', auth: true, body })
-      .then((r) => r.data);
+      .request<{ activity: ActivityView }>('/admin/activities', { method: 'POST', auth: true, body })
+      .then((r) => r.data.activity);
   },
   updateActivity(id: string, body: UpdateActivityRequest): Promise<ActivityView> {
     return apiClient
-      .request<ActivityView>(`/admin/activities/${id}`, { method: 'PATCH', auth: true, body })
-      .then((r) => r.data);
+      .request<{ activity: ActivityView }>(`/admin/activities/${id}`, { method: 'PATCH', auth: true, body })
+      .then((r) => r.data.activity);
   },
   deleteActivity(id: string): Promise<void> {
     return apiClient
@@ -122,13 +125,13 @@ export const adminApi = {
   },
   createPost(body: CreatePostRequest): Promise<PostView> {
     return apiClient
-      .request<PostView>('/admin/posts', { method: 'POST', auth: true, body })
-      .then((r) => r.data);
+      .request<{ post: PostView }>('/admin/posts', { method: 'POST', auth: true, body })
+      .then((r) => r.data.post);
   },
   updatePost(id: string, body: UpdatePostRequest): Promise<PostView> {
     return apiClient
-      .request<PostView>(`/admin/posts/${id}`, { method: 'PATCH', auth: true, body })
-      .then((r) => r.data);
+      .request<{ post: PostView }>(`/admin/posts/${id}`, { method: 'PATCH', auth: true, body })
+      .then((r) => r.data.post);
   },
   deletePost(id: string): Promise<void> {
     return apiClient

@@ -153,9 +153,18 @@ export interface LogoutRequest {
   refreshToken: string;
 }
 
-/** 注册/登录响应（含令牌）。 */
+/** 注册/登录响应（含用户视图与令牌）。 */
 export interface AuthResult {
   user: UserView;
+  accessToken: string;
+  refreshToken: string;
+}
+
+/**
+ * 仅含令牌的响应（契约 §3.1：/auth/refresh 只返回令牌，不含 user）。
+ * 与后端 packages/shared 的 authRefreshResponseSchema 对齐。
+ */
+export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
@@ -179,8 +188,11 @@ export interface CreateActivityRequest {
   startAt: string;
   endAt: string;
   capacity: number;
-  /** 可选：创建时直接指定初始状态（默认 DRAFT）。 */
-  status?: ActivityStatus;
+  /**
+   * 必填：初始状态枚举（与后端 packages/shared 的 adminCreateActivityRequestSchema 对齐）。
+   * 表单本就默认 DRAFT 且必填，不破坏交互。
+   */
+  status: ActivityStatus;
 }
 
 export interface CreatePostRequest {
@@ -188,8 +200,11 @@ export interface CreatePostRequest {
   summary: string;
   content: string;
   coverUrl: string;
-  /** 可选：创建时直接指定初始状态（默认 DRAFT）。 */
-  status?: PostStatus;
+  /**
+   * 必填：初始状态枚举（与后端 packages/shared 的 adminCreatePostRequestSchema 对齐）。
+   * 表单本就默认 DRAFT 且必填，不破坏交互。
+   */
+  status: PostStatus;
 }
 
 /** 活动编辑请求（契约 §3.4：PATCH /admin/activities/:id，字段同创建但均可选）。 */

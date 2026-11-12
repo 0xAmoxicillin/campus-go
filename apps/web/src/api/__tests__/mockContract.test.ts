@@ -103,7 +103,7 @@ describe('统一响应体 / 分页 / 错误码（docs/api-contract-v0.1.md §0�
     const created = await adminApi.createActivity({
       title: '待删除活动', summary: 's', content: 'c',
       coverUrl: 'https://x.test/cover.png', location: 'L', startAt: '2026-12-01T01:00:00.000Z',
-      endAt: '2026-12-01T03:00:00.000Z', capacity: 5,
+      endAt: '2026-12-01T03:00:00.000Z', capacity: 5, status: ActivityStatus.DRAFT,
     });
     await adminApi.deleteActivity(created.id);
     const list = await adminApi.listActivities({ pageSize: 50 });
@@ -130,7 +130,7 @@ describe('统一响应体 / 分页 / 错误码（docs/api-contract-v0.1.md §0�
       adminApi.createActivity({
         title: 'x', summary: 's', content: 'c',
         coverUrl: 'https://x.test/cover.png', location: 'L', startAt: '2026-12-01T01:00:00.000Z',
-        endAt: '2026-12-01T03:00:00.000Z', capacity: 5,
+        endAt: '2026-12-01T03:00:00.000Z', capacity: 5, status: ActivityStatus.DRAFT,
       }),
     ).rejects.toMatchObject({ code: ErrorCode.FORBIDDEN });
   });

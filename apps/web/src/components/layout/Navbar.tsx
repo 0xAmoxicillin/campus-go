@@ -7,14 +7,9 @@ import { CompassIcon, MoonIcon, SunIcon, UserIcon } from '@/components/icons';
 import { useThemeStore } from '@/store/useThemeStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { siteConfig } from '@/config/site';
 
-const links = [
-  { to: '/', label: '首页' },
-  { to: '/about', label: '关于校园行' },
-  { to: '/activities', label: '活动·行程' },
-  { to: '/posts', label: '资讯·动态' },
-  { to: '/join', label: '加入我们' },
-];
+const links = siteConfig.nav;
 
 /** 设计系统基础组件：Navbar（玻璃吸顶 + 移动端折叠 + 主题切换 + 登录态）。 */
 export function Navbar() {
@@ -34,7 +29,7 @@ export function Navbar() {
             <CompassIcon />
           </span>
           <span className="text-lg">
-            校园行<span className="text-brand-600">CampusGo</span>
+            {siteConfig.name}<span className="text-brand-600">{siteConfig.nameEn}</span>
           </span>
         </Link>
 

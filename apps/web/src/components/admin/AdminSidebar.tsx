@@ -15,6 +15,7 @@ import { useThemeStore } from '@/store/useThemeStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from '@/components/ui/Toast';
 import { LogoutIcon } from '@/components/icons';
+import { siteConfig } from '@/config/site';
 
 export type AdminModule = 'overview' | 'users' | 'activities' | 'posts';
 
@@ -80,7 +81,7 @@ function BrandRow() {
         <CompassIcon width={18} height={18} />
       </span>
       <span className="text-base">
-        校园行<span className="text-brand-600">CampusGo</span>
+        {siteConfig.name}<span className="text-brand-600">{siteConfig.nameEn}</span>
       </span>
     </div>
   );
