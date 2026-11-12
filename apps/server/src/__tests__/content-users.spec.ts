@@ -74,12 +74,28 @@ describe('Content / Users (M2)', () => {
       expect(res.body.code).toBe(40400);
     });
 
+    it('活动详情已 PUBLISHED → 200 {activity}', async () => {
+      ctx.prisma.activity.findUnique.mockResolvedValue(activity({ id: 'act_pub', status: ActivityStatus.PUBLISHED }));
+      const res = await request(ctx.app.getHttpServer()).get('/api/activities/act_pub');
+      expect(res.status).toBe(200);
+      expect(res.body.data.activity.id).toBe('act_pub');
+      expect(res.body.data).toHaveProperty('activity');
+    });
+
     it('资讯列表只返回 PUBLISHED', async () => {
       ctx.prisma.post.findMany.mockResolvedValue([post()]);
       ctx.prisma.post.count.mockResolvedValue(1);
       const res = await request(ctx.app.getHttpServer()).get('/api/posts');
       expect(res.status).toBe(200);
       expect(res.body.data.items[0].status).toBe('PUBLISHED');
+    });
+
+    it('资讯详情已 PUBLISHED → 200 {post}', async () => {
+      ctx.prisma.post.findUnique.mockResolvedValue(post({ id: 'pst_pub', status: PostStatus.PUBLISHED }));
+      const res = await request(ctx.app.getHttpServer()).get('/api/posts/pst_pub');
+      expect(res.status).toBe(200);
+      expect(res.body.data.post.id).toBe('pst_pub');
+      expect(res.body.data).toHaveProperty('post');
     });
 
     it('pageSize 上限 100（zod 约束，超界按 400 拒绝）', async () => {

@@ -18,10 +18,12 @@ import {
   AdminUpdatePostRequest,
   AdminUpdateUserRequest,
   AdminUserListQuery,
+  PageQuery,
   Paginated,
   PostView,
   UserView,
   adminUserListQuerySchema,
+  pageQuerySchema,
   adminUpdateUserRequestSchema,
   adminCreateActivityRequestSchema,
   adminUpdateActivityRequestSchema,
@@ -57,34 +59,37 @@ export class AdminController {
 
   @Patch('users/:id')
   @ApiOperation({ summary: '改用户 {status?, role?}（启停 / 改角色）' })
-  updateUser(
+  async updateUser(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(adminUpdateUserRequestSchema)) body: AdminUpdateUserRequest,
-  ): Promise<UserView> {
-    return this.adminService.updateUser(id, body);
+  ): Promise<{ user: UserView }> {
+    const user = await this.adminService.updateUser(id, body);
+    return { user };
   }
 
   @Get('activities')
   @ApiOperation({ summary: '活动管理列表（含 DRAFT/ARCHIVED，分页）' })
-  listActivities(@Query() query: { page: number; pageSize: number }) {
+  listActivities(@Query(new ZodValidationPipe(pageQuerySchema)) query: PageQuery) {
     return this.adminService.listActivities(query);
   }
 
   @Post('activities')
   @ApiOperation({ summary: '新建活动' })
-  createActivity(
+  async createActivity(
     @Body(new ZodValidationPipe(adminCreateActivityRequestSchema)) body: AdminCreateActivityRequest,
-  ): Promise<ActivityView> {
-    return this.adminService.createActivity(body);
+  ): Promise<{ activity: ActivityView }> {
+    const activity = await this.adminService.createActivity(body);
+    return { activity };
   }
 
   @Patch('activities/:id')
   @ApiOperation({ summary: '编辑活动' })
-  updateActivity(
+  async updateActivity(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(adminUpdateActivityRequestSchema)) body: AdminUpdateActivityRequest,
-  ): Promise<ActivityView> {
-    return this.adminService.updateActivity(id, body);
+  ): Promise<{ activity: ActivityView }> {
+    const activity = await this.adminService.updateActivity(id, body);
+    return { activity };
   }
 
   @Delete('activities/:id')
@@ -95,25 +100,27 @@ export class AdminController {
 
   @Get('posts')
   @ApiOperation({ summary: '资讯管理列表（分页）' })
-  listPosts(@Query() query: { page: number; pageSize: number }) {
+  listPosts(@Query(new ZodValidationPipe(pageQuerySchema)) query: PageQuery) {
     return this.adminService.listPosts(query);
   }
 
   @Post('posts')
   @ApiOperation({ summary: '新建资讯' })
-  createPost(
+  async createPost(
     @Body(new ZodValidationPipe(adminCreatePostRequestSchema)) body: AdminCreatePostRequest,
-  ): Promise<PostView> {
-    return this.adminService.createPost(body);
+  ): Promise<{ post: PostView }> {
+    const post = await this.adminService.createPost(body);
+    return { post };
   }
 
   @Patch('posts/:id')
   @ApiOperation({ summary: '编辑资讯' })
-  updatePost(
+  async updatePost(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(adminUpdatePostRequestSchema)) body: AdminUpdatePostRequest,
-  ): Promise<PostView> {
-    return this.adminService.updatePost(id, body);
+  ): Promise<{ post: PostView }> {
+    const post = await this.adminService.updatePost(id, body);
+    return { post };
   }
 
   @Delete('posts/:id')

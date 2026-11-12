@@ -9,8 +9,10 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import {
+  ActivityView,
   ContentListQuery,
   EnrollmentView,
+  PostView,
   contentListQuerySchema,
 } from '@campus-go/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
@@ -39,8 +41,9 @@ export class ContentController {
 
   @Get('activities/:id')
   @ApiOperation({ summary: '活动详情（仅 PUBLISHED，否则 404）' })
-  getActivity(@Param('id') id: string) {
-    return this.contentService.getActivity(id);
+  async getActivity(@Param('id') id: string): Promise<{ activity: ActivityView }> {
+    const activity = await this.contentService.getActivity(id);
+    return { activity };
   }
 
   @Post('activities/:id/join')
@@ -65,7 +68,8 @@ export class ContentController {
 
   @Get('posts/:id')
   @ApiOperation({ summary: '资讯详情（仅 PUBLISHED，否则 404）' })
-  getPost(@Param('id') id: string) {
-    return this.contentService.getPost(id);
+  async getPost(@Param('id') id: string): Promise<{ post: PostView }> {
+    const post = await this.contentService.getPost(id);
+    return { post };
   }
 }

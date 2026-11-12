@@ -6,6 +6,7 @@ import {
   AdminUpdatePostRequest,
   AdminUpdateUserRequest,
   AdminUserListQuery,
+  PageQuery,
   Paginated,
   UserView,
 } from '@campus-go/shared';
@@ -53,14 +54,11 @@ export class AdminService {
     if (Object.keys(data).length === 0) {
       throw ApiException.badRequest('至少需要提供 status 或 role 之一');
     }
-    if (dto.role === 'ADMIN' && user.role !== 'ADMIN') {
-      // 安全约束：避免通过后台把普通用户批量升 ADMIN 而无审计——此处仅接受明确角色变更。
-    }
     const updated = await this.prisma.user.update({ where: { id }, data });
     return toUserView(updated);
   }
 
-  async listActivities(query: { page: number; pageSize: number }) {
+  async listActivities(query: PageQuery) {
     const { page, pageSize } = query;
     const [items, total] = await Promise.all([
       this.prisma.activity.findMany({
@@ -118,7 +116,7 @@ export class AdminService {
     return null;
   }
 
-  async listPosts(query: { page: number; pageSize: number }) {
+  async listPosts(query: PageQuery) {
     const { page, pageSize } = query;
     const [items, total] = await Promise.all([
       this.prisma.post.findMany({

@@ -100,7 +100,7 @@ describe('AdminController RBAC + CRUD (M2)', () => {
       expect(res.body.data).toEqual({ items: expect.any(Array), total: 1, page: 1, pageSize: 20 });
     });
 
-    it('ADMIN 改用户 status（启停）', async () => {
+    it('ADMIN 改用户 status（启停）→ {user}', async () => {
       ctx.prisma.user.findUnique.mockResolvedValue(makeUser({ id: 'usr_x' }));
       ctx.prisma.user.update.mockImplementation(async ({ data }: any) => makeUser({ id: 'usr_x', status: data.status }));
       const res = await request(ctx.app.getHttpServer())
@@ -108,7 +108,8 @@ describe('AdminController RBAC + CRUD (M2)', () => {
         .set('Authorization', `Bearer ${adminAccess}`)
         .send({ status: 'DISABLED' });
       expect(res.status).toBe(200);
-      expect(res.body.data.status).toBe('DISABLED');
+      expect(res.body.data.user.status).toBe('DISABLED');
+      expect(res.body.data).toHaveProperty('user');
     });
 
     it('ADMIN 活动列表含 DRAFT/ARCHIVED（非公开过滤）', async () => {
@@ -122,26 +123,34 @@ describe('AdminController RBAC + CRUD (M2)', () => {
       expect(res.body.data.items.map((a: any) => a.status)).toContain('DRAFT');
     });
 
-    it('ADMIN 新建活动 → 201', async () => {
+    it('ADMIN 新建活动 → 201 {activity}', async () => {
       ctx.prisma.activity.create.mockImplementation(async ({ data }: any) => activity({ title: data.title, status: data.status }));
       const res = await request(ctx.app.getHttpServer())
         .post('/api/admin/activities')
         .set('Authorization', `Bearer ${adminAccess}`)
         .send({ title: '新活动', summary: 's', content: 'c', startAt: new Date().toISOString(), endAt: new Date(Date.now() + 86400000).toISOString(), status: 'DRAFT' });
       expect(res.status).toBe(201);
-      const act = res.body.data.activity ?? res.body.data;
-      expect(act.title).toBe('新活动');
+      expect(res.body.data.activity.title).toBe('新活动');
+      expect(res.body.data).toHaveProperty('activity');
     });
 
-    it('ADMIN 新建资讯 → 201', async () => {
+    it('ADMIN 新建资讯 → 201 {post}', async () => {
       ctx.prisma.post.create.mockImplementation(async ({ data }: any) => post({ title: data.title, status: data.status }));
       const res = await request(ctx.app.getHttpServer())
         .post('/api/admin/posts')
         .set('Authorization', `Bearer ${adminAccess}`)
         .send({ title: '新资讯', summary: 's', content: 'c', status: 'DRAFT' });
       expect(res.status).toBe(201);
-      const p = res.body.data.post ?? res.body.data;
-      expect(p.title).toBe('新资讯');
+      expect(res.body.data.post.title).toBe('新资讯');
+      expect(res.body.data).toHaveProperty('post');
+    });
+
+    it('ADMIN 列表 pageSize=101 → 400 / 40001', async () => {
+      const res = await request(ctx.app.getHttpServer())
+        .get('/api/admin/activities?pageSize=101')
+        .set('Authorization', `Bearer ${adminAccess}`);
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(40001);
     });
 
     it('ADMIN 删除活动 → 200 data=null', async () => {
