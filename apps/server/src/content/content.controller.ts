@@ -1,51 +1,75 @@
 import {
-  Body,
   Controller,
   Get,
   Param,
   Post,
   Query,
   UseGuards,
+  Body,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ActivityView,
+  ContentListQuery,
+  EnrollmentView,
+  PostView,
+  contentListQuerySchema,
+} from '@campus-go/shared';
+import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ContentService } from './content.service';
+import { AuthUser } from '../auth/auth-user.decorator';
 
 /**
  * 官网公开内容端点（契约 §3.3）。
- * - 列表/详情（activities / posts）无需登录，M1 仅铺设 Swagger 契约骨架；
- * - POST /activities/:id/join 需登录（USER/ADMIN），挂 JwtAuthGuard（M2 实现容量/重复校验与 409）。
+ * - 列表/详情（activities / posts）无需登录，仅返回 PUBLISHED；
+ * - POST /activities/:id/join 需登录（USER/ADMIN），挂 JwtAuthGuard（容量/重复校验与 409 由 service 负责）。
+ * query 使用 shared 的 contentListQuerySchema 经 ZodValidationPipe 校验+coerce（page/pageSize 转 number）。
  */
 @ApiTags('Content')
 @Controller()
 export class ContentController {
+  constructor(private readonly contentService: ContentService) {}
+
   @Get('activities')
   @ApiOperation({ summary: '活动列表（仅 PUBLISHED，分页，支持 ?q=）' })
-  listActivities(@Query() _query: { page?: number; pageSize?: number; q?: string }) {
-    return null;
+  listActivities(
+    @Query(new ZodValidationPipe(contentListQuerySchema)) query: ContentListQuery,
+  ) {
+    return this.contentService.listActivities(query);
   }
 
   @Get('activities/:id')
-  @ApiOperation({ summary: '活动详情（仅 PUBLISHED）' })
-  getActivity(@Param('id') _id: string) {
-    return null;
+  @ApiOperation({ summary: '活动详情（仅 PUBLISHED，否则 404）' })
+  async getActivity(@Param('id') id: string): Promise<{ activity: ActivityView }> {
+    const activity = await this.contentService.getActivity(id);
+    return { activity };
   }
 
   @Post('activities/:id/join')
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '报名活动（需登录；容量已满/重复报名返回 409）' })
-  joinActivity(@Param('id') _id: string) {
-    return null;
+  async joinActivity(
+    @Param('id') id: string,
+    @AuthUser() user: { userId: string },
+  ): Promise<{ enrollment: EnrollmentView }> {
+    const enrollment = await this.contentService.joinActivity(id, user.userId);
+    return { enrollment };
   }
 
   @Get('posts')
-  @ApiOperation({ summary: '资讯列表（仅 PUBLISHED，分页）' })
-  listPosts(@Query() _query: { page?: number; pageSize?: number; q?: string }) {
-    return null;
+  @ApiOperation({ summary: '资讯列表（仅 PUBLISHED，分页，支持 ?q=）' })
+  listPosts(
+    @Query(new ZodValidationPipe(contentListQuerySchema)) query: ContentListQuery,
+  ) {
+    return this.contentService.listPosts(query);
   }
 
   @Get('posts/:id')
-  @ApiOperation({ summary: '资讯详情（仅 PUBLISHED）' })
-  getPost(@Param('id') _id: string) {
-    return null;
+  @ApiOperation({ summary: '资讯详情（仅 PUBLISHED，否则 404）' })
+  async getPost(@Param('id') id: string): Promise<{ post: PostView }> {
+    const post = await this.contentService.getPost(id);
+    return { post };
   }
 }

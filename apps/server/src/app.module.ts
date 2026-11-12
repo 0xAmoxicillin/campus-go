@@ -4,17 +4,25 @@ import { AppConfigService } from './config/config.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthInfraModule } from './auth/auth.module';
 import { AuthController } from './auth/auth.controller';
-import { UsersController } from './users/users.controller';
-import { ContentController } from './content/content.controller';
-import { AdminController } from './admin/admin.controller';
+import { UsersModule } from './users/users.module';
+import { ContentModule } from './content/content.module';
+import { AdminModule } from './admin/admin.module';
 
 /**
- * M1 应用根模块：仅装配「契约 + schema + 基础设施 + Swagger」。
- * 业务服务（AuthService / UsersService / AdminService）在 M2 单独 PR 实现。
+ * 应用根模块（M2）：装配基础设施 + 真实业务模块。
+ * 各 controller 由其所在 feature module 注册（AuthController 在 AuthInfraModule，
+ * 其余在 Users/Content/Admin 模块），避免重复注册导致 DI 解析歧义。
  */
 @Module({
-  imports: [AppConfigModule, PrismaModule, AuthInfraModule],
-  controllers: [AuthController, UsersController, ContentController, AdminController],
+  imports: [
+    AppConfigModule,
+    PrismaModule,
+    AuthInfraModule,
+    UsersModule,
+    ContentModule,
+    AdminModule,
+  ],
+  controllers: [AuthController],
 })
 export class AppModule {
   constructor(private readonly config: AppConfigService) {}
