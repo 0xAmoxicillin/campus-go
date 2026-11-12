@@ -13,6 +13,8 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './specs',
+  // 只跑 M1 契约结构回归（拦截层）；真实服务用例由 playwright.real.config.ts 单独跑。
+  testMatch: ['auth-flow.spec.ts', 'rbac.spec.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
