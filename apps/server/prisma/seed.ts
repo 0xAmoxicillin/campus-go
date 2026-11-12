@@ -15,6 +15,17 @@
  *      运行时零外部 http(s) 请求，守住离线 / 私有仓红线；
  *    - 按唯一字段 title 判重，重复执行 seed 不重复插入、不破坏已有数据。
  *
+ * 3) 跨端命名锁定清单（前后端唯一约定，任一方不得单方面改名）
+ *    - 本文件 DEMO 数据共 13 条 coverUrl，与前端 `apps/web/public/covers/` 一一对应，
+ *      是该目录下「seed 负责部分」的唯一命名来源（前端另有其自有的 12 个 campus-*.webp）；
+ *    - 锁定的 13 个文件名（均带 /covers/ 前缀，运行时零 http(s) 外链）：
+ *        lab-tour.webp / ginkgo-ride.webp / hack-night.webp / newyear-concert.webp /
+ *        signup-guide.webp / behind-scenes.webp / city-orienteering.webp /
+ *        post-signup.webp / post-behind.webp / post-ginkgo.webp /
+ *        post-lab-review.webp / post-hack-preview.webp / post-volunteer.webp
+ *    - 任一侧改文件名都必须同步另一侧，禁止各用一套命名（否则本地真实模式封面 404）。
+ *    - 全部为本地相对路径 `/covers/<name>.webp`，运行时零外部 http(s) 请求。
+ *
  * 运行：ADMIN_SEED_EMAIL=... ADMIN_SEED_PASSWORD=... npx ts-node -r tsconfig-paths/register prisma/seed.ts
  */
 import { PrismaClient, Role, ActivityStatus, PostStatus } from '@prisma/client';
@@ -57,6 +68,9 @@ async function seedAdmin() {
 /**
  * 示例活动数据。coverUrl 均为本地相对路径，绝不指向外部 http(s)。
  * 时间为本地时区（UTC+08:00）的 ISO 字符串，覆盖不同状态与日期。
+ *
+ * ⚠️ 跨端命名锁定：以下 7 个 coverUrl 为本 seed 锁定的 13 个文件名之一，
+ * 与 `apps/web/public/covers/` 一一对应，任一侧改名字都必须同步另一侧（见文件顶部约定）。
  */
 const DEMO_ACTIVITIES: {
   title: string;
@@ -157,6 +171,9 @@ const DEMO_ACTIVITIES: {
 
 /**
  * 示例资讯数据。coverUrl 均为本地相对路径，绝不指向外部 http(s)。
+ *
+ * ⚠️ 跨端命名锁定：以下 6 个 coverUrl 为本 seed 锁定的 13 个文件名之一，
+ * 与 `apps/web/public/covers/` 一一对应，任一侧改名字都必须同步另一侧（见文件顶部约定）。
  */
 const DEMO_POSTS: {
   title: string;
