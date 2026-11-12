@@ -130,6 +130,15 @@ jobs:
       E2E_API_BASE: http://localhost:3001/api
       E2E_ENTRY_URL: http://localhost:5173
       ADMIN_SEED_EMAIL: admin@campusgo.local
+      # ------------------------------------------------------------------
+      # 仅 CI 测试环境放宽登录限流，生产默认 10 次 / 60 秒不变。
+      # 真实服务 E2E（workers:1 串行）在数秒内从同一 IP 连续调用
+      # register/login 约 20+ 次（29 用例含 retries 还会更多），会触发
+      # LoginThrottlerGuard 按 IP 计数 10 次/60 秒的 429，导致用例失败。
+      # guard 原生支持 LOGIN_THROTTLE_LIMIT，此处提高上限保证全量用例跑完；
+      # 不修改 guard 业务逻辑、不在生产代码里识别/跳过测试请求。
+      # ------------------------------------------------------------------
+      LOGIN_THROTTLE_LIMIT: '200'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
