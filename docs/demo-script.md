@@ -29,6 +29,11 @@
 | 04 | 用户·活动·资讯管理 | 10.0s | 新建 / 编辑 / 删除 / 启停全流程 | `POST/PATCH/DELETE /api/admin/**` |
 | 05 | 安全红线 | 10.0s | 401 / 403 / 200 三条请求对照 | `/api/admin/users` 三种身份 |
 
+**响应形状约定**（与 `docs/api-contract-v0.1.md` 及 README「API 概览」一致，演示页日志按此写）：
+- 全部响应统一为 `{ code, message, data }`，成功 `code=0`；
+- **单点资源**的 `data` 再包一层 key —— `data.activity` / `data.post` / `data.enrollment` / `data.user`；
+- **分页列表** `data` 为 `{ items, total, page, pageSize }`；**Auth 令牌对** `data` 为 `{ user, accessToken, refreshToken }`；**DELETE / logout** 的 `data` 为 `null`。
+
 ## 2. 分镜明细
 
 ### 场景 01 · 官网浏览（00:00 – 00:09）
@@ -59,13 +64,13 @@
 |---|---|
 | 0.9s | 邮箱输入框进入 typing 状态 |
 | 2.2s | 密码框显示示例值 `Campus2026` |
-| 4.2s | 提交按钮变为 `✓ 201 Created · { code: 0, data: { user, tokens } }`，出现 `role = USER` 胶囊 |
+| 4.2s | 提交按钮变为 `✓ 201 Created · { code: 0, data: { user, accessToken, refreshToken } }`，出现 `role = USER` 胶囊 |
 | 5.6s | 显示红线批注：请求体带 role=ADMIN 一律忽略；初始 ADMIN 只由种子脚本创建 |
 | 7.0s | 页签切到「登录」，按钮变为管理员登录，出现 `role = ADMIN` 胶囊 |
 
 **要点逐条**
-1. `POST /api/auth/register` → `{ user, accessToken, refreshToken }`
-2. `POST /api/auth/login` · refresh 轮换 · logout 吊销
+1. `POST /api/auth/register` → `{ code: 0, message: "ok", data: { user, accessToken, refreshToken } }`（Auth 令牌对不包第二层 key）
+2. `POST /api/auth/login` · refresh 轮换（`data: { accessToken, refreshToken }`）· logout 吊销（`data: null`）
 3. 初始 ADMIN 仅由 `prisma/seed.ts` 种子脚本创建
 
 ---
@@ -98,13 +103,13 @@
 |---|---|---|
 | 1.5s | 活动列表新增「城市骑行计划」 | `> POST /api/admin/activities → 201 { code: 0, data: { activity } }` |
 | 3.8s | 编辑后标题变为「城市骑行计划 · 更新版」 | `> PATCH /api/admin/activities/:id → 200 { code: 0, data: { activity } }` |
-| 6.2s | 用户状态 ACTIVE → DISABLED | `> PATCH /api/admin/users/:id → 200 { status: "DISABLED" }` |
+| 6.2s | 用户状态 ACTIVE → DISABLED | `> PATCH /api/admin/users/:id → 200 { code: 0, data: { user: { status: "DISABLED", … } } }` |
 | 8.0s | 删除资讯 | `> DELETE /api/admin/posts/:id → 200 { code: 0, data: null }` |
 
 **要点逐条**
-1. `POST` / `PATCH` / `DELETE /api/admin/activities` · `/posts`
-2. `PATCH /api/admin/users/:id` 改 status / role（启停）
-3. 报名 `POST /api/activities/:id/join` 去重与容量 409
+1. `POST` / `PATCH` / `DELETE /api/admin/activities` · `/posts`（单点响应均为 `data.activity` / `data.post` 包装）
+2. `PATCH /api/admin/users/:id` 改 status / role（启停），返回 `data.user`
+3. 报名 `POST /api/activities/:id/join` 返回 `data.enrollment`，去重与容量 409
 
 ---
 

@@ -4,7 +4,8 @@
 // 与 M1 的 page.route 拦截层不同，本文件打的是**运行中的真实服务**：
 //   PostgreSQL 16 → prisma migrate deploy → seed 管理员 → NestJS(3001) → Vite(5173)
 // 覆盖：注册(USER) / 登录 / 角色分流 / 越权 401(未登录) · 403(USER 访问 /api/admin/**)
-//       / 用户启停 / 活动·资讯 CRUD / 统一响应体与分页结构 / 前端页面可达与角色分流。
+//       / 用户启停 / 活动·资讯 CRUD / 单点资源包装形状 / 统一响应体与分页结构
+//       / 前端页面可达与角色分流。
 //
 // 运行前提（详见 README「本地启动与验证」）：
 //   E2E_MODE=real ADMIN_SEED_PASSWORD=<.env 中的值> pnpm run test:e2e:real
@@ -33,6 +34,7 @@ import {
   register,
   type ActivityView,
   type AuthData,
+  type EnrollmentView,
   type PageData,
   type PostView,
 } from '../fixtures/real-api';
@@ -227,7 +229,179 @@ test.describe('契约 §0：统一响应体与分页结构', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 4. 后台 CRUD：用户启停 / 活动·资讯 新建·编辑·删除
+// 4. 单点资源包装形状（契约 §3.1–§3.3）
+//
+// 用户拍板「选项1」：单点资源响应的 data 统一再包一层 key ——
+//   GET  /activities/:id        → data.activity
+//   GET  /posts/:id             → data.post
+//   POST /activities/:id/join   → data.enrollment
+//   GET  /users/me              → data.user
+//   PATCH /users/me             → data.user
+// 分页 {items,total,page,pageSize}、Auth 令牌对 {user,accessToken,refreshToken}、
+// DELETE null 不变。下列用例一律先断言 {code,message,data} + ErrorCode.OK，
+// 再断言包装 key 与视图字段。公开列表只列 PUBLISHED，造数据必须显式 PUBLISHED。
+// ---------------------------------------------------------------------------
+
+test.describe('契约 §3 单点资源包装形状', () => {
+  /** 造一条 PUBLISHED 活动（后台创建），返回 id；调用方负责 finally 删除。 */
+  async function publishedActivity(request: APIRequestContext, adminToken: string, title: string) {
+    const created = await call<{ activity: ActivityView }>(
+      request, 'POST', '/admin/activities',
+      {
+        token: adminToken,
+        data: {
+          title,
+          summary: '形状断言用活动',
+          content: '自动化测试创建的 PUBLISHED 活动。',
+          location: '操场',
+          startAt: '2026-11-20T07:00:00.000Z',
+          endAt: '2026-11-20T09:00:00.000Z',
+          capacity: 100,
+          status: 'PUBLISHED',
+        },
+      },
+    );
+    expect([200, 201]).toContain(created.status);
+    expectEnvelope(created.body);
+    expect(created.body.code).toBe(ErrorCode.OK);
+    return (created.body.data as { activity: ActivityView }).activity.id;
+  }
+
+  /** 造一条 PUBLISHED 资讯（后台创建），返回 id；调用方负责 finally 删除。 */
+  async function publishedPost(request: APIRequestContext, adminToken: string, title: string) {
+    const created = await call<{ post: PostView }>(
+      request, 'POST', '/admin/posts',
+      {
+        token: adminToken,
+        data: { title, summary: '形状断言用资讯', content: '自动化测试创建的 PUBLISHED 资讯。', status: 'PUBLISHED' },
+      },
+    );
+    expect([200, 201]).toContain(created.status);
+    expectEnvelope(created.body);
+    expect(created.body.code).toBe(ErrorCode.OK);
+    return (created.body.data as { post: PostView }).post.id;
+  }
+
+  test('GET /activities/:id → data.activity（公开列表只列 PUBLISHED）', async ({ request }) => {
+    const admin = await adminSession(request);
+    const id = await publishedActivity(request, admin.accessToken, 'E2E 形状断言 · 活动详情');
+    try {
+      const listed = await call<PageData<ActivityView>>(request, 'GET', '/activities');
+      expect(listed.status).toBe(200);
+      expectEnvelope(listed.body);
+      expect(listed.body.code).toBe(ErrorCode.OK);
+      const page = listed.body.data as PageData<ActivityView>;
+      expectPageData(page);
+      // 公开列表只列 PUBLISHED：造的这条 PUBLISHED 必须在，且不得混入 DRAFT/ARCHIVED。
+      expect(page.items.some((a) => a.id === id)).toBe(true);
+      expect(page.items.every((a) => a.status === 'PUBLISHED')).toBe(true);
+
+      const detail = await call<{ activity: ActivityView }>(request, 'GET', `/activities/${id}`);
+      expect(detail.status).toBe(200);
+      expectEnvelope(detail.body);
+      expect(detail.body.code).toBe(ErrorCode.OK);
+      expect(detail.body.message).toEqual(expect.any(String));
+      const data = detail.body.data as { activity: ActivityView };
+      expect(Object.keys(data)).toContain('activity');
+      expect(data.activity.id).toBe(id);
+      expect(data.activity.status).toBe('PUBLISHED');
+      expect(data.activity.title).toEqual(expect.any(String));
+    } finally {
+      await call(request, 'DELETE', `/admin/activities/${id}`, { token: admin.accessToken });
+    }
+  });
+
+  test('GET /posts/:id → data.post（公开列表只列 PUBLISHED）', async ({ request }) => {
+    const admin = await adminSession(request);
+    const id = await publishedPost(request, admin.accessToken, 'E2E 形状断言 · 资讯详情');
+    try {
+      const listed = await call<PageData<PostView>>(request, 'GET', '/posts');
+      expect(listed.status).toBe(200);
+      expectEnvelope(listed.body);
+      expect(listed.body.code).toBe(ErrorCode.OK);
+      const page = listed.body.data as PageData<PostView>;
+      expectPageData(page);
+      expect(page.items.some((p) => p.id === id)).toBe(true);
+      expect(page.items.every((p) => p.status === 'PUBLISHED')).toBe(true);
+
+      const detail = await call<{ post: PostView }>(request, 'GET', `/posts/${id}`);
+      expect(detail.status).toBe(200);
+      expectEnvelope(detail.body);
+      expect(detail.body.code).toBe(ErrorCode.OK);
+      expect(detail.body.message).toEqual(expect.any(String));
+      const data = detail.body.data as { post: PostView };
+      expect(Object.keys(data)).toContain('post');
+      expect(data.post.id).toBe(id);
+      expect(data.post.status).toBe('PUBLISHED');
+      expect(data.post.title).toEqual(expect.any(String));
+    } finally {
+      await call(request, 'DELETE', `/admin/posts/${id}`, { token: admin.accessToken });
+    }
+  });
+
+  test('POST /activities/:id/join → data.enrollment，且不含 passwordHash', async ({ request }) => {
+    const admin = await adminSession(request);
+    const id = await publishedActivity(request, admin.accessToken, 'E2E 形状断言 · 报名');
+    try {
+      const u = await newUser(request, 'join');
+      const joined = await call<{ enrollment: EnrollmentView }>(
+        request, 'POST', `/activities/${id}/join`, { token: u.accessToken },
+      );
+      expect([200, 201]).toContain(joined.status);
+      expectEnvelope(joined.body);
+      expect(joined.body.code).toBe(ErrorCode.OK);
+      expect(joined.body.message).toEqual(expect.any(String));
+      const data = joined.body.data as { enrollment: EnrollmentView };
+      expect(Object.keys(data)).toContain('enrollment');
+      expect(data.enrollment.id).toEqual(expect.any(String));
+      expect(data.enrollment.userId).toBe(u.user.id);
+      expect(data.enrollment.activityId).toBe(id);
+      // 安全红线：报名视图绝不返回 passwordHash（与 user 视图一致）。
+      expect(JSON.stringify(data.enrollment)).not.toContain('passwordHash');
+    } finally {
+      await call(request, 'DELETE', `/admin/activities/${id}`, { token: admin.accessToken });
+    }
+  });
+
+  test('PATCH /users/me → data.user，且 email/role/status 未被越权改动', async ({ request }) => {
+    const u = await newUser(request, 'profile');
+    const patched = await call<{ user: AuthData['user'] }>(
+      request, 'PATCH', '/users/me',
+      {
+        token: u.accessToken,
+        // 契约 §3.2：仅允许 {name}；携带越权字段验证其被忽略，不得改动 email/role/status。
+        data: {
+          name: 'E2E 改名后的用户',
+          email: 'attacker@evil.local',
+          role: 'ADMIN',
+          status: 'DISABLED',
+        },
+      },
+    );
+    expect(patched.status).toBe(200);
+    expectEnvelope(patched.body);
+    expect(patched.body.code).toBe(ErrorCode.OK);
+    expect(patched.body.message).toEqual(expect.any(String));
+    const data = patched.body.data as { user: AuthData['user'] };
+    expect(Object.keys(data)).toContain('user');
+    expect(data.user.name).toBe('E2E 改名后的用户');
+    expect(data.user.email).toBe(u.email);
+    expect(data.user.role).toBe('USER');
+    expect(data.user.status).toBe('ACTIVE');
+    expect(JSON.stringify(data.user)).not.toContain('passwordHash');
+
+    // 再取一次，确认持久层同样未被越权改动（不只是响应体）。
+    const reloaded = await getMe(request, u.accessToken);
+    expect(reloaded.status).toBe(200);
+    const persisted = reloaded.body.data as { user: AuthData['user'] };
+    expect(persisted.user.email).toBe(u.email);
+    expect(persisted.user.role).toBe('USER');
+    expect(persisted.user.status).toBe('ACTIVE');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 5. 后台 CRUD：用户启停 / 活动·资讯 新建·编辑·删除
 // ---------------------------------------------------------------------------
 
 test.describe('真实后台 CRUD（仅 ADMIN）', () => {
@@ -342,7 +516,7 @@ test.describe('真实后台 CRUD（仅 ADMIN）', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 5. 前端页面可达 + 角色分流（体验层；安全边界已在上面接口级验证）
+// 6. 前端页面可达 + 角色分流（体验层；安全边界已在上面接口级验证）
 // ---------------------------------------------------------------------------
 
 test.describe('真实前端页面（Vite 5173）', () => {

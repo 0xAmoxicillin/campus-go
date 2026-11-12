@@ -476,8 +476,8 @@
       duration: 9500,
       narration: '模板自带完整鉴权样板：密码 ≥8 位、<strong>bcrypt 哈希</strong> 落库，返回 user 视图与 access / refresh token。注册<strong>硬编码 role=USER</strong>，请求体带 role=ADMIN 也一律忽略——拿去复用时红线也已替你兜好。',
       notes: [
-        'POST /api/auth/register → { user, accessToken, refreshToken }',
-        'POST /api/auth/login · refresh 轮换 · logout 吊销',
+        'POST /api/auth/register → data: { user, accessToken, refreshToken }',
+        'POST /api/auth/login · refresh 轮换 · logout 吊销（data: null）',
         '初始 ADMIN 仅由 prisma/seed.ts 种子脚本创建'
       ]
     },
@@ -494,11 +494,11 @@
     {
       title: '用户·活动·资讯管理',
       duration: 10000,
-      narration: '内容不写死在页面里：用户启停、活动与资讯<strong>新建 / 编辑 / 删除</strong>都走真实接口，换成自己的数据源即可复用这套后台。删除返回 data:null，仍保持统一响应体。',
+      narration: '内容不写死在页面里：用户启停、活动与资讯<strong>新建 / 编辑 / 删除</strong>都走真实接口，换成自己的数据源即可复用这套后台。单点响应的 data 统一再包一层 key（data.activity / data.post / data.user），删除返回 data:null，仍保持统一响应体。',
       notes: [
-        'POST / PATCH / DELETE /api/admin/activities · /posts',
-        'PATCH /api/admin/users/:id 改 status / role（启停）',
-        '报名 POST /api/activities/:id/join 去重与容量 409'
+        'POST / PATCH / DELETE /api/admin/activities · /posts（单点 data.activity / data.post）',
+        'PATCH /api/admin/users/:id 改 status / role（启停）→ data.user',
+        '报名 POST /api/activities/:id/join → data.enrollment，去重与容量 409'
       ]
     },
     {
@@ -585,7 +585,7 @@
     if (i === 1) {
       if (local > 900) { el('fld-email').classList.add('typing'); }
       if (local > 2200) { el('fld-pw').textContent = 'Campus2026'; el('fld-pw').classList.add('typing'); }
-      if (local > 4200) { el('submit-btn').textContent = '✓ 201 Created · { code: 0, data: { user, tokens } }'; el('pill-user').classList.add('show'); }
+      if (local > 4200) { el('submit-btn').textContent = '✓ 201 Created · { code: 0, data: { user, accessToken, refreshToken } }'; el('pill-user').classList.add('show'); }
       if (local > 5600) { el('reg-redline').classList.add('show'); }
       if (local > 7000) { el('tab-reg').classList.remove('active'); el('tab-login').classList.add('active'); el('submit-btn').textContent = '管理员登录 · POST /api/auth/login'; el('pill-admin').classList.add('show'); }
     }
@@ -596,7 +596,7 @@
     if (i === 3) {
       if (local > 1500) { el('row-new').style.display = 'flex'; el('crud-log').textContent = '> POST /api/admin/activities → 201 { code: 0, data: { activity } }'; }
       if (local > 3800) { el('edit-name').textContent = '城市骑行计划 · 更新版'; el('crud-log').textContent = '> PATCH /api/admin/activities/:id → 200 { code: 0, data: { activity } }'; }
-      if (local > 6200) { el('user-status').textContent = 'DISABLED'; el('user-status').className = 'badge off'; el('toggle-btn').textContent = '已停用'; el('crud-log').textContent = '> PATCH /api/admin/users/:id → 200 { status: "DISABLED" }'; }
+      if (local > 6200) { el('user-status').textContent = 'DISABLED'; el('user-status').className = 'badge off'; el('toggle-btn').textContent = '已停用'; el('crud-log').textContent = '> PATCH /api/admin/users/:id → 200 { code: 0, data: { user: { status: "DISABLED", … } } }'; }
       if (local > 8000) { el('crud-log').textContent = '> DELETE /api/admin/posts/:id → 200 { code: 0, data: null }'; }
     }
     if (i === 4) {

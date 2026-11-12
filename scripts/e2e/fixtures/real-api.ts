@@ -60,6 +60,15 @@ export interface PostView {
   [k: string]: unknown;
 }
 
+/** 报名视图（契约 §2 / §3.3）；视图层绝不返回 passwordHash。 */
+export interface EnrollmentView {
+  id: string;
+  userId: string;
+  activityId: string;
+  createdAt: string;
+  [k: string]: unknown;
+}
+
 /** 错误码（契约 §0）；E2E 只用到其中与红线相关的几个。 */
 export const ErrorCode = {
   OK: 0,

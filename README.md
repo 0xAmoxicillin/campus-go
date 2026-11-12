@@ -125,18 +125,29 @@ pnpm --filter @campus-go/web run dev            # http://localhost:5173   · VIT
 
 ## API 概览
 
-契约事实来源：[`docs/api-contract-v0.1.md`](docs/api-contract-v0.1.md)（受控文档，本批不改）。Base URL `/api`；全部响应统一为 `{ code, message, data }`，分页 `data` 为 `{ items, total, page, pageSize }`；错误码 `40100` 未登录、`40300` 越权、`40900` 冲突。
+契约事实来源：[`docs/api-contract-v0.1.md`](docs/api-contract-v0.1.md)（受控文档，本批不改）。Base URL `/api`；全部响应统一为 `{ code, message, data }`，成功 `code=0`（`ErrorCode.OK`）；错误码 `40100` 未登录、`40300` 越权、`40900` 冲突。
+
+**`data` 形状**（按契约字面，前后端一律对齐）：
+
+| 响应类型 | `data` 形状 | 端点示例 |
+|---|---|---|
+| 单点资源 | 统一再包一层 key | `GET /api/activities/:id` → `data.activity`；`GET /api/posts/:id` → `data.post`；`POST /api/activities/:id/join` → `data.enrollment`；`GET` / `PATCH /api/users/me` 与 `PATCH /api/admin/users/:id` → `data.user`；`POST` / `PATCH /api/admin/activities[/:id]` → `data.activity`；`POST` / `PATCH /api/admin/posts[/:id]` → `data.post` |
+| 分页列表 | `{ items, total, page, pageSize }` | `GET /api/activities` · `/posts` · `/admin/users` · `/admin/activities` · `/admin/posts` |
+| Auth 令牌对 | `{ user, accessToken, refreshToken }`（及 refresh 的 `{ accessToken, refreshToken }`） | `POST /api/auth/register` · `/login` · `/refresh` |
+| 无返回体 | `null` | `POST /api/auth/logout`、`DELETE /api/admin/activities/:id` · `/api/admin/posts/:id` |
+
+> 单点响应一律是 `{ "code": 0, "message": "ok", "data": { "activity": { … } } }` 这样的**两层结构**，不要把 `data` 直接当资源对象用；分页列表与 Auth 令牌对、DELETE null 保持上表原样。公开列表 / 详情只返回 `PUBLISHED` 内容。
 
 | 分组 | 端点 | 权限 |
 |---|---|---|
 | Auth | `POST /api/auth/register` · `/login` · `/refresh` · `/logout` | 公开 |
-| 用户自助 | `GET` / `PATCH /api/users/me` | USER / ADMIN（Bearer） |
+| 用户自助 | `GET` / `PATCH /api/users/me`（PATCH 仅允许 `{name}`） | USER / ADMIN（Bearer） |
 | 官网内容 | `GET /api/activities` · `/activities/:id` · `/posts` · `/posts/:id`，`POST /api/activities/:id/join` | 列表详情公开；报名需登录 |
 | 管理员 | `GET /api/admin/users`，`PATCH /api/admin/users/:id` | 仅 ADMIN |
 | 管理员 | `GET/POST /api/admin/activities`，`PATCH/DELETE /api/admin/activities/:id` | 仅 ADMIN |
 | 管理员 | `GET/POST /api/admin/posts`，`PATCH/DELETE /api/admin/posts/:id` | 仅 ADMIN |
 
-`user` 视图固定 `{id,email,name,role,status,createdAt}`，**绝不返回 `passwordHash`**。Swagger 注解与 21 个端点由 NestJS 生成：`http://localhost:3001/docs`。
+`user` / `enrollment` 视图固定白名单字段，**绝不返回 `passwordHash`**；`user` 视图为 `{id,email,name,role,status,createdAt}`，且 `PATCH /api/users/me` 不会改动 `email` / `role` / `status`。Swagger 注解与 21 个端点由 NestJS 生成：`http://localhost:3001/docs`。
 
 ## 安全与隐私
 
@@ -214,9 +225,9 @@ E2E_START_SERVICES=1 ADMIN_SEED_PASSWORD='<.env 中的值>' pnpm run test:e2e:re
 | 模式 | 命令 | 依赖 | 覆盖 |
 |---|---|---|---|
 | 契约结构回归 | `pnpm run test:e2e:contract` | 无（page.route 拦截 fixture） | 统一响应体 / 分页 / 401·403 红线判定，19 用例 |
-| 真实服务 | `pnpm run test:e2e:real` | PG16 + NestJS + Vite + seed | 注册(USER)/登录/角色分流/越权 401·403/用户启停/活动·资讯 CRUD/前端页面与分流，25 用例 |
+| 真实服务 | `pnpm run test:e2e:real` | PG16 + NestJS + Vite + seed | 注册(USER)/登录/角色分流/越权 401·403/用户启停/活动·资讯 CRUD/单点资源包装形状/前端页面与分流，29 用例 |
 
-真实服务用例断言统一响应体 `{code,message,data}` 与分页 `{items,total,page,pageSize}`，并验证「请求体带 `role=ADMIN` 仍得 USER」「USER 访问 `/api/admin/**` 一律 403」「`user` 视图不泄露 `passwordHash`」。纯本地无 PG / 未起服务时该套件会明确失败并给出配置提示，**不会伪装全绿**。
+真实服务用例断言统一响应体 `{code,message,data}`（成功 `code=0`）与分页 `{items,total,page,pageSize}`，并覆盖四类单点包装形状：`GET /activities/:id → data.activity`、`GET /posts/:id → data.post`、`POST /activities/:id/join → data.enrollment`、`PATCH /users/me → data.user`（且断言 `email/role/status` 未被越权改动）；同时验证「请求体带 `role=ADMIN` 仍得 USER」「USER 访问 `/api/admin/**` 一律 403」「`user` / `enrollment` 视图不泄露 `passwordHash`」「公开列表只列 PUBLISHED」。纯本地无 PG / 未起服务时该套件会明确失败并给出配置提示，**不会伪装全绿**。
 
 ## 里程碑状态
 
