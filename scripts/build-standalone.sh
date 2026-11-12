@@ -106,8 +106,10 @@ cat > "$OUT/README.md" <<'MD'
 - `./bin/campus-go restart`  重启
 - `./bin/campus-go logs`     查看日志
 
-默认端口：PG 5432 / server 3001 / web 5173，全部可用 .env 覆盖。
-访问：官网 http://localhost:5173/ · API http://localhost:5173/api · Swagger http://localhost:3001/docs
+默认端口：PG 55432 / server 13001 / web 15173（避开仓库开发实例 5432 / 3001 / 5173），
+且 COMPOSE_PROJECT_NAME / POSTGRES_CONTAINER_NAME / POSTGRES_VOLUME_NAME / 三个端口
+全部可用 .env 覆盖；多个解压副本默认按目录路径派生独立身份，互不干扰。
+实际地址以 ./bin/campus-go start 打印的访问地址为准。
 
 完整说明见仓库 docs/STANDALONE.md。
 MD
