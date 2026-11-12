@@ -2,7 +2,7 @@
   "name": "campus-go",
   "version": "0.1.0",
   "private": true,
-  "description": "校园行 CampusGo · monorepo 根工作区（M2 全栈/测试：真实服务 E2E / CI 门禁 / README / 离线产品演示）",
+  "description": "校园行 CampusGo · monorepo 根工作区（M2 全栈/测试：真实服务 E2E / CI 门禁 / README / 真实 apps/web 界面录屏与截图）",
   "engines": {
     "node": ">=20",
     "pnpm": ">=9"

@@ -9,23 +9,27 @@
 
 > **一套拿来即套用的校园官网 + 后台展示模版**：改品牌名与文案、换内容数据即可复用；官网、登录注册、RBAC 后台、真实接口与 E2E 全链路已经串好。
 
-这是一个**可复用的官网 / 后台展示模板**（不是某个内部系统的一次性交付）。主题是「校园行」，但你完全可以把它换成社团、赛事、实验室或任意活动的官网：品牌与站点文案集中、内容数据独立、主题走设计令牌，前后端分离且默认对接真实 API。仓库**保持 PRIVATE**；演示页在仓库内，`clone` 后双击本地打开即可看效果，不依赖任何在线服务。
+这是一个**可复用的官网 / 后台展示模板**（不是某个内部系统的一次性交付）。主题是「校园行」，但你完全可以把它换成社团、赛事、实验室或任意活动的官网：品牌与站点文案集中、内容数据独立、主题走设计令牌，前后端分离且默认对接真实 API。仓库**保持 PRIVATE**；真实产品界面的录屏与截图都在仓库内，`clone` 后用本地相对路径即可打开，不依赖任何在线服务。
 
-## ▶ 产品演示（离线、零依赖）
+## ▶ 产品演示（真实界面录屏 · 仓库内相对路径）
 
-- **[`docs/demo.html` · 5 场景产品演示动画](docs/demo.html)** —— **clone 后双击本地打开**（`file://` 即可，不联网、无 CDN、无外部字体）。空格暂停、←/→ 切场景、1×/1.5×/2× 倍速、R 重播、顶部章节直达，中文逐字旁白。
-- 分镜与旁白：[`docs/demo-script.md`](docs/demo-script.md)。
-- 演示页为**内联合成数据**的离线动画，用于说明交互与权限模型，不替代运行中的 `apps/web`；下面有仓库内真实截图。
+[![点击打开真实 apps/web 界面录屏](docs/screenshot-01-home.png)](docs/demo.webm)
 
-| 官网浏览 | 注册登录 | 管理员后台 |
+**[`docs/demo.webm` · 点击打开真实产品界面录屏](docs/demo.webm)** —— `clone` 后用本地相对路径点开即可播放（静音、无旁白、循环友好；不联网、无 CDN、无外部字体/图片，零外部请求）。
+
+- **录屏来源**：真实运行的 `apps/web` SPA，接真实全栈（Docker PG16 → `prisma migrate deploy` → `seed` → NestJS `3001` + Vite `5173`），录制时 `VITE_USE_MOCK` 不置 `true`，默认对接真实 API；前端为含 Fix-B（单点响应解包 + 品牌配置抽取）的最新 tip。画面依次展示官网首页 Hero 与活动/资讯卡片、活动列表与详情、注册/登录、管理员后台左栏 dashboard、用户管理（含 RBAC 安全边界提示）、活动管理的一次完整「新建 → 编辑 → 删除」（真实接口落库，可见「活动已创建 / 已更新 / 已删除」提示）、资讯管理，最后回到官网首页便于循环。
+- **规格**：WebM（VP8）· 约 40 秒 · 1280×800 · 静音、无旁白 · 约 2.5 MB。用仓库已装的 Playwright（`@playwright/test` 1.63.0 + Chromium）`recordVideo` 录制，脚本见 [`scripts/capture-demo.mjs`](scripts/capture-demo.mjs)；录制时屏蔽一切外部请求，封面图用内联 SVG。
+- **画面边界**：未出现真实密码、密钥、`.env` 内容或个人信息；管理员账号只在本地临时 `.env`（已被 `.gitignore`）里供录制时登录，不入库。
+
+下面是**对运行中的 `apps/web` 实际截取**的 5 张截图（无头 Chromium，1280×800），不是占位图、不是外链、不是另画的 UI：
+
+| 官网首页（近期活动真实数据卡片） | 注册 / 登录 | 管理员后台（左栏 dashboard 概览） |
 |---|---|---|
-| ![官网浏览](docs/screenshot-01-home.png) | ![注册登录](docs/screenshot-02-auth.png) | ![管理员后台](docs/screenshot-03-admin.png) |
+| ![官网首页](docs/screenshot-01-home.png) | ![注册登录](docs/screenshot-02-auth.png) | ![管理员后台](docs/screenshot-03-admin.png) |
 
-| 内容管理 | 安全红线 |
+| 活动管理 CRUD（新建/编辑/删除） | 用户管理 + RBAC 安全边界提示 |
 |---|---|
-| ![内容管理](docs/screenshot-04-crud.png) | ![安全红线](docs/screenshot-05-security.png) |
-
-> 截图均由无头 Chromium 对 `docs/demo.html` 实际截取（见 `docs/demo-script.md` 自测清单），不是占位图、不是外链。
+| ![内容管理](docs/screenshot-04-crud.png) | ![用户管理与安全边界](docs/screenshot-05-users.png) |
 
 ---
 
@@ -34,7 +38,7 @@
 - **可复用模板**：官网展示 + 登录注册 + RBAC 后台三块解耦，目录结构清晰，按「如何套用到自己的项目」一节改几处即可换皮。
 - **易改品牌与内容**：产品名 / Slogan / 导航 / 页脚集中在 `apps/web` 页面组件与 `index.html`；活动与资讯走接口数据，不写死在页面里；主色、圆角、字体走 Tailwind 设计令牌。
 - **一键启动**：`docker compose up -d` 起 PG16，`pnpm install` 后按固定前置顺序即可起 server + web（命令见「快速开始」）。
-- **无需真实后端也能看效果**：前端保留 `VITE_USE_MOCK=true` 演示开关（默认仍接真实 API），后端未起时也能浏览官网与后台展示；`docs/demo.html` 更是 `file://` 双击即开、完全离线。
+- **无需真实后端也能看效果**：前端保留 `VITE_USE_MOCK=true` 演示开关（默认仍接真实 API），后端未起时也能浏览官网与后台展示；仓库内的 `docs/demo.webm` 是真实全栈界面录屏，`docs/screenshot-*.png` 是对运行中 `apps/web` 的实际截图，均可用本地相对路径打开、完全离线。
 - **真实全栈联通**：NestJS + Prisma + PostgreSQL 16，Auth/JWT/RBAC、用户启停、活动/资讯 CRUD 都是真实接口；接口级 `JwtAuthGuard + RolesGuard` 是安全边界。
 - **后台左栏 dashboard**：左侧固定模块导航 + 右侧内容区，用户 / 活动 / 资讯管理分栏清晰。
 - **测试与门禁**：Playwright 契约结构回归 + 真实服务 E2E、CI 三包齐全后的真实 lint/typecheck/test/build 门禁、版本一致性报告。
@@ -107,9 +111,9 @@ pnpm --filter @campus-go/web run dev            # http://localhost:5173   · VIT
 
 ### 演示模式：零后端也能看效果
 
-- **最省事**：双击 `docs/demo.html`，完全离线看 5 场景产品演示动画（无需任何服务）。
+- **看真实界面录屏与截图**：本地相对路径点开 [`docs/demo.webm`](docs/demo.webm) 看真实全栈 `apps/web` 界面录屏，或看 `docs/screenshot-*.png` 五张实际截图；二者都在仓库内、零外部请求、无需任何服务。
 - **看真实 SPA 而不起后端**：在 `apps/web` 起前端时设 `VITE_USE_MOCK=true`，前端切到 mock adapter，官网与后台展示页照常渲染；此模式下所有响应来自前端 mock，不是真实数据库。默认 `VITE_USE_MOCK=false` 才接真实 API。
-- 说明：真实注册/登录/JWT/CRUD 需要 PG16 + 后端 + `migrate deploy` + seed，无法在纯 mock 模式验证；演示与真实两套能力边界如实区分，互不冒充。
+- 说明：真实注册/登录/JWT/CRUD 需要 PG16 + 后端 + `migrate deploy` + seed，无法在纯 mock 模式验证；演示与真实两套能力边界如实区分，互不冒充。仓库内的 `docs/demo.webm` 录的是**真实全栈**（非 mock 模式），其数据由真实接口落库；若你在本地用 `VITE_USE_MOCK=true` 复现界面，数据来自前端 mock，与录屏里的真实后端不同。
 
 ## 如何套用到自己的项目
 
@@ -118,8 +122,8 @@ pnpm --filter @campus-go/web run dev            # http://localhost:5173   · VIT
    - 产品名与页面 `<title>`：`apps/web/index.html`；
    - 导航 / 页脚 / Hero Slogan / 栏目文案：`apps/web/src/components/layout/` 与 `apps/web/src/pages/`；
    - 主题主色、圆角、字体：`apps/web/tailwind.config.js` 与 `apps/web/src/index.css` 的设计令牌。
-3. **改内容数据**：活动 / 资讯 / 用户信息走接口（`GET /api/activities`、`/api/posts`、`/api/admin/**`），接自己的数据源或在后台里录入即可，不必改页面结构；纯演示可改 `docs/demo.html` 内联的合成数据。
-4. **启动看效果**：按「快速开始」真实模式起全栈，或用 `VITE_USE_MOCK=true` 演示模式 / 双击 `docs/demo.html` 零后端预览。
+3. **改内容数据**：活动 / 资讯 / 用户信息走接口（`GET /api/activities`、`/api/posts`、`/api/admin/**`），接自己的数据源或在后台里录入即可，不必改页面结构；用 `VITE_USE_MOCK=true` 演示模式时数据来自前端 mock，真实模式由后端接口提供。
+4. **启动看效果**：按「快速开始」真实模式起全栈，或用 `VITE_USE_MOCK=true` 演示模式零后端预览；也可本地点开 [`docs/demo.webm`](docs/demo.webm) 看真实界面录屏。
 5. **接自己的后端**：只要保持 `docs/api-contract-v0.1.md` 的统一响应体与端点形状，把 `.env` 里的 `VITE_API_BASE_URL` 指向你的服务即可；若要改字段，按协作规范走 PR 同步更新 `packages/shared` + 契约文档 + Swagger。
 6. **CI / 部署**：`.github/workflows/ci.yml` 的前置顺序照抄即可；密钥全部通过环境变量注入，`.env` 不入库。
 
@@ -155,7 +159,7 @@ pnpm --filter @campus-go/web run dev            # http://localhost:5173   · VIT
 - **接口级边界**：`JwtAuthGuard + RolesGuard` 兜底，`/api/admin/**` 未登录 `401/40100`、USER 越权 `403/40300`；前端路由守卫只做体验分流。
 - **口令与密钥**：密码 bcrypt 哈希后落库，绝不落明文、不进日志与响应；JWT 短时 access(15m) + refresh(7d) 轮换；`JWT_*`、`POSTGRES_PASSWORD`、`ADMIN_SEED_PASSWORD` 全部从 `.env` 读取，`.env` 已 `.gitignore`，**绝不入库**。
 - **登录保护**：登录限流（42900）、CORS 白名单、Swagger 每接口标注所需角色。
-- **本仓状态**：PRIVATE；未开 Pages、未编造任何在线演示/视频链接；演示页与截图都在仓库内。
+- **本仓状态**：PRIVATE；未开 Pages、未编造任何在线演示/视频链接；真实界面录屏与截图都在仓库内，用本地相对路径打开，零外部请求。
 
 ## 目录结构
 
@@ -171,11 +175,11 @@ campus-go/
 │   │   ├── specs/           # auth-flow / rbac（契约回归）· real-service（真实服务 E2E）
 │   │   ├── playwright.config.ts       # 契约结构回归配置
 │   │   └── playwright.real.config.ts  # 真实服务配置（webServer / 复用已起服务）
+│   ├── capture-demo.mjs               # 真实 apps/web 界面录屏 / 截图脚本（Playwright）
 │   └── check-version-consistency.sh   # 版本一致性报告（非阻塞）
 ├── docs/
-│   ├── demo.html            # 零依赖离线产品演示动画（file:// 双击即开）
-│   ├── demo-script.md       # 分镜与旁白
-│   ├── screenshot-*.png     # README 引用的真实截图
+│   ├── demo.webm            # 真实 apps/web 界面录屏（WebM/VP8，静音、无旁白）
+│   ├── screenshot-*.png     # 对运行中 apps/web 实际截取的 5 张真实截图
 │   ├── design-v0.1.md / api-contract-v0.1.md / collaboration-v0.1.md  # 受控文档，禁改
 ├── .github/workflows/ci.yml # 质量门禁 + 真实服务 E2E job
 ├── docker-compose.yml       # PG16（+ apps profile 预留 server/web）
@@ -232,7 +236,7 @@ E2E_START_SERVICES=1 ADMIN_SEED_PASSWORD='<.env 中的值>' pnpm run test:e2e:re
 ## 里程碑状态
 
 - **M1 完成**：契约先行（`packages/shared` + Prisma schema/migration + Swagger）、前端设计系统与官网静态页 + mock adapter、根 workspace + CI 门禁 + E2E 骨架 + 版本一致性脚本，三路 PR 已合并到 `develop`（基准 `de8e05e`）。
-- **M2 真实功能**：后端 Auth/RBAC/Admin CRUD、前端官网实接 + **左栏 dashboard 后台**、全栈真实服务 E2E + CI 门禁切 `--frozen-lockfile` + 详细版 README + 离线产品演示页与截图，三路并行 PR 对 `develop` 开出，待项目组长逐行 Review 后合并。
+- **M2 真实功能**：后端 Auth/RBAC/Admin CRUD、前端官网实接 + **左栏 dashboard 后台**、全栈真实服务 E2E + CI 门禁切 `--frozen-lockfile` + 详细版 README + 真实 `apps/web` 界面录屏与 5 张实际截图，三路并行 PR 对 `develop` 开出，待项目组长逐行 Review 后合并。
 - **M3+ 展望**：三方合并态 CI 实跑验证与版本一致性硬门禁、Docker 多阶段镜像与部署/回滚脚本、性能与 3D 视觉打磨、可访问性与 Lighthouse 达标。
 
 ## 协作与流程
