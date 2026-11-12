@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Container, Section } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
+import { CoverImage } from '@/components/ui/CoverImage';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { PageHeader, EmptyState, Pagination } from '@/components/common/PageHeader';
@@ -63,7 +64,7 @@ export function ActivitiesPage() {
               {items.map((a, i) => (
                 <Reveal key={a.id} delay={i * 0.04}>
                   <Card tilt={!reduced} className="flex h-full flex-col overflow-hidden">
-                    <img src={a.coverUrl} alt={a.title} loading="lazy" className="h-44 w-full object-cover" />
+                    <CoverImage src={a.coverUrl} alt={a.title} className="h-44 w-full object-cover" />
                     <div className="flex flex-1 flex-col p-5">
                       <h3 className="text-lg font-semibold text-ink">{a.title}</h3>
                       <p className="mt-2 line-clamp-2 flex-1 text-sm text-ink-soft">{a.summary}</p>

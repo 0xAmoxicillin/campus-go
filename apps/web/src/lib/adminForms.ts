@@ -21,12 +21,21 @@ export function datetimeLocalToIso(value: string): string {
   return d.toISOString();
 }
 
+/** 封面图地址：允许 http(s) 外链，也允许本地相对路径（如 /covers/xxx.webp）。 */
+const coverUrlSchema = z
+  .string()
+  .min(1, '请输入封面图地址')
+  .refine(
+    (v) => /^(https?:\/\/|\/)/.test(v.trim()),
+    '封面需为 http(s) 链接或本地路径（以 / 开头）',
+  );
+
 /** 活动表单校验（字段对齐契约 §3.4：title/summary/content/coverUrl/location/startAt/endAt/capacity/status）。 */
 export const activitySchema = z.object({
   title: z.string().min(1, '请输入标题').max(80, '标题过长'),
   summary: z.string().min(1, '请输入摘要').max(160, '摘要过长'),
   content: z.string().min(1, '请输入正文'),
-  coverUrl: z.string().url('封面需为合法 URL'),
+  coverUrl: coverUrlSchema,
   location: z.string().min(1, '请输入地点'),
   startAt: z.string().min(1, '请选择开始时间'),
   endAt: z.string().min(1, '请选择结束时间'),
@@ -44,7 +53,7 @@ export const postSchema = z.object({
   title: z.string().min(1, '请输入标题').max(80, '标题过长'),
   summary: z.string().min(1, '请输入摘要').max(160, '摘要过长'),
   content: z.string().min(1, '请输入正文'),
-  coverUrl: z.string().url('封面需为合法 URL'),
+  coverUrl: coverUrlSchema,
   status: z.nativeEnum(PostStatus),
 });
 export type PostFormValues = z.infer<typeof postSchema>;
