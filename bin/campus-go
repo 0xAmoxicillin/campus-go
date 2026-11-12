@@ -1,0 +1,389 @@
+#!/usr/bin/env bash
+# ---------------------------------------------------------------------------
+# CampusGo 一键启动器（独立分发包入口）
+#
+#   在仓库根目录或解压后的分发包根目录执行：
+#     ./bin/campus-go start      拉起 PG16 → 迁移 → seed → server → web 静态托管
+#     ./bin/campus-go stop       停止 server / web，并停掉 PG 容器（保留数据卷）
+#     ./bin/campus-go restart    stop 后 start
+#     ./bin/campus-go status     查看各组件状态
+#     ./bin/campus-go logs       查看 server / web 日志
+#
+#   start 是幂等的：重复执行会先停掉本启动器之前拉起的进程再重新拉起；
+#   seed 脚本本身幂等，prisma migrate deploy 可重复执行，stop→start 数据不丢。
+#
+# 前置依赖（不声称「零依赖 / 双击即跑」）：
+#   - Docker 已安装且守护进程正在运行；docker compose v2（Docker Desktop 自带）
+#   - Node.js >= 20（server 与内置静态服务器都是 Node 进程）
+#   - pnpm >= 9：仅「重新构建分发包」时需要；直接使用现成分发包不需要
+#   - 首次构建需联网安装依赖；运行期无需联网（PG 镜像首次需拉取）
+#
+# 端口全部可由 .env 覆盖；默认 PG 5432 / server 3001 / web 5173。
+# 启动器只为本次运行生成 .env 与 compose 覆写文件，均落在 .run/（已被 .gitignore），
+# 不修改仓库自带 docker-compose.yml，也不提交任何真实密钥。
+# ---------------------------------------------------------------------------
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT"
+
+RUN_DIR="$ROOT/.run"
+LOG_DIR="$ROOT/.logs"
+PID_WEB="$RUN_DIR/web.pid"
+PID_SERVER="$RUN_DIR/server.pid"
+ENV_FILE="$RUN_DIR/campus-go.env"
+COMPOSE_OVERRIDE="$RUN_DIR/compose.override.yml"
+COMPOSE_FILE="$ROOT/docker-compose.yml"
+ENV_EXAMPLE="$ROOT/.env.example"
+SERVER_DIR="$ROOT/apps/server"
+WEB_DIST="$ROOT/apps/web/dist"
+STATIC_SERVER="$ROOT/bin/static-server.cjs"
+
+# 按分发目录绝对路径生成稳定后缀：同一目录多次 start 复用同一容器/数据卷，
+# 不同目录（多个解压副本）互不干扰，也不会抢同机其他任务的 compose 项目。
+INSTANCE_ID="$(printf '%s' "$ROOT" | node -e "
+  let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{
+    const h=require('crypto').createHash('sha256').update(s).digest('hex').slice(0,8);
+    process.stdout.write(h);
+  });
+")"
+PROJECT_NAME="campusgo-${INSTANCE_ID}"
+CONTAINER_NAME="campusgo-${INSTANCE_ID}-postgres"
+
+log()  { printf '\033[32m[campus-go]\033[0m %s\n' "$*"; }
+warn() { printf '\033[33m[campus-go]\033[0m %s\n' "$*" >&2; }
+err()  { printf '\033[31m[campus-go]\033[0m %s\n' "$*" >&2; }
+die()  { err "$*"; exit 1; }
+
+need_cmd() { command -v "$1" >/dev/null 2>&1 || die "缺少命令：$1，请先安装并确认在 PATH 中可用。"; }
+
+port_listening() {
+  local port="$1"
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -iTCP:"$port" -sTCP:LISTEN -n -P >/dev/null 2>&1
+  else
+    # 无 lsof 时用 Node 探活：能成功 listen 说明端口空闲（返回 1），否则被占用（返回 0）。
+    node -e "
+      const net=require('net');const s=net.createServer();
+      s.once('error',()=>process.exit(0));
+      s.once('listening',()=>{s.close(()=>process.exit(1))});
+      s.listen(Number(process.argv[1]),'0.0.0.0');
+    " "$port"
+  fi
+}
+
+port_pids() {
+  # 列出监听端口的 PID；无 lsof 时最小化环境退化为不清理（PID 文件仍是主路径）。
+  local port="$1"
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -t -iTCP:"$port" -sTCP:LISTEN 2>/dev/null || true
+  fi
+}
+
+http_ok() { curl -fsS -o /dev/null --max-time 3 "$1" 2>/dev/null; }
+
+wait_http() {
+  local url="$1" label="$2" tries="${3:-60}"
+  local i=1
+  while [ "$i" -le "$tries" ]; do
+    if http_ok "$url"; then log "$label 已就绪：$url"; return 0; fi
+    sleep 1
+    i=$((i + 1))
+  done
+  err "$label 在 ${tries}s 内未就绪：$url"
+  return 1
+}
+
+pid_alive() {
+  local f="$1"
+  [ -f "$f" ] || return 1
+  kill -0 "$(cat "$f" 2>/dev/null)" 2>/dev/null
+}
+
+# 读取 .env / .env.local / .env.example 中的 KEY=VALUE（不做 shell 求值，
+# 避免执行注入内容）。优先读本次生成的合并文件 .run/campus-go.env；
+# prepare_env 每次先 cp .env.example 重置它，故不会回灌陈旧值。
+env_get() {
+  local key="$1" file
+  for file in "$ENV_FILE" "$ROOT/.env" "$ROOT/.env.local" "$ENV_EXAMPLE"; do
+    [ -f "$file" ] || continue
+    local val
+    val="$(grep -E "^${key}=" "$file" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '\r')"
+    if [ -n "$val" ]; then printf '%s' "$val"; return 0; fi
+  done
+  return 1
+}
+
+port_free_or_ours() {
+  # 端口已被占用时，若不是本启动器的进程则视为冲突（不抢占其他任务的服务）。
+  local port="$1" pidfile="$2"
+  if port_listening "$port"; then
+    if pid_alive "$pidfile" && http_ok "http://127.0.0.1:$port/"; then
+      return 0
+    fi
+    return 1
+  fi
+  return 0
+}
+
+# ---------------------------------------------------------------------------
+# 生成运行期 .env：优先沿用用户已有 .env / .env.local，缺失项用 .env.example 补齐；
+# 再按实际端口覆盖 DATABASE_URL / VITE_API_BASE_URL / CORS_ORIGINS。
+# ---------------------------------------------------------------------------
+prepare_env() {
+  mkdir -p "$RUN_DIR" "$LOG_DIR"
+  [ -f "$ENV_EXAMPLE" ] || die "缺少 $ENV_EXAMPLE"
+
+  # 以 .env.example 为基底，依次用 .env.local / .env 覆盖同名键（后者优先）。
+  # upsert_env 会自读新生成的文件，故先落地基底，再逐层覆盖。
+  cp "$ENV_EXAMPLE" "$ENV_FILE"
+  local src key val line
+  for src in "$ROOT/.env.local" "$ROOT/.env"; do
+    [ -f "$src" ] || continue
+    while IFS= read -r line || [ -n "$line" ]; do
+      case "$line" in
+        ''|\#*) continue ;;
+        *=*)
+          key="${line%%=*}"
+          val="${line#*=}"
+          upsert_env "$key" "$val"
+          ;;
+      esac
+    done < "$src"
+  done
+
+  PG_PORT="$(env_get POSTGRES_PORT || echo 5432)"
+  SERVER_PORT="$(env_get SERVER_PORT || echo 3001)"
+  WEB_PORT="$(env_get WEB_PORT || echo 5173)"
+  PG_PASS="$(env_get POSTGRES_PASSWORD || true)"
+  [ -n "$PG_PASS" ] || die "POSTGRES_PASSWORD 未在 .env / .env.example 中配置。"
+
+  # 密码只做 URL 编码中的必要转义（本模板值为普通 ASCII）。
+  local db_url="postgresql://$(env_get POSTGRES_USER || echo campusgo):${PG_PASS}@127.0.0.1:${PG_PORT}/$(env_get POSTGRES_DB || echo campusgo)?schema=public"
+  upsert_env DATABASE_URL "$db_url"
+  upsert_env POSTGRES_PORT "$PG_PORT"
+  upsert_env SERVER_PORT "$SERVER_PORT"
+  upsert_env WEB_PORT "$WEB_PORT"
+  upsert_env CORS_ORIGINS "http://localhost:${WEB_PORT},http://127.0.0.1:${WEB_PORT}"
+  # 前端与 web 同源，API 走静态服务器的 /api 反向代理。
+  upsert_env VITE_API_BASE_URL "/api"
+  upsert_env NODE_ENV "production"
+
+  chmod 600 "$ENV_FILE"
+}
+
+upsert_env() {
+  local key="$1" val="$2" tmp="$ENV_FILE.new"
+  grep -v -E "^${key}=" "$ENV_FILE" > "$tmp" 2>/dev/null || true
+  printf '%s=%s\n' "$key" "$val" >> "$tmp"
+  mv "$tmp" "$ENV_FILE"
+}
+
+compose_cmd() {
+  docker compose --project-name "$PROJECT_NAME" \
+    --env-file "$ENV_FILE" \
+    -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" "$@"
+}
+
+make_compose_override() {
+  cat > "$COMPOSE_OVERRIDE" <<EOF
+# 由 bin/campus-go 生成（.run/ 已被 .gitignore，不入库）。
+# 覆写宿主端口映射与容器名：复用仓库自带 compose 的 PG16 镜像 / volume / healthcheck，
+# 但用独立项目名与容器名，避免与同机其他 compose 项目的 5432 / campus-go-postgres 冲突。
+services:
+  postgres:
+    container_name: ${CONTAINER_NAME}
+    ports: !override
+      - "${PG_PORT}:5432"
+EOF
+}
+
+load_env() {
+  # 关闭 glob，避免 .env 里的 ? / * 在赋值时被 shell 展开。
+  set -a
+  set -f
+  # shellcheck disable=SC1090
+  . "$ENV_FILE"
+  set +f
+  set +a
+}
+
+# ---------------------------------------------------------------------------
+cmd_start() {
+  need_cmd docker
+  need_cmd node
+  need_cmd curl
+  docker compose version >/dev/null 2>&1 || die "需要 docker compose v2（Docker Desktop 自带）。"
+  docker info >/dev/null 2>&1 || die "Docker 守护进程未运行，请先启动 Docker Desktop。"
+
+  prepare_env
+  load_env
+  make_compose_override
+
+  log "端口：PG=${PG_PORT}  server=${SERVER_PORT}  web=${WEB_PORT}"
+
+  # 幂等：若本启动器之前拉起过进程，先停掉再重新拉起。
+  if pid_alive "$PID_SERVER" || pid_alive "$PID_WEB"; then
+    log "检测到本启动器已有进程，先停止再重新启动。"
+    stop_processes || true
+  fi
+
+  port_free_or_ours "$WEB_PORT" "$PID_WEB" || die "端口 ${WEB_PORT} 已被其他进程占用；请在 .env 或 .env.local 里改 WEB_PORT 后重试。"
+  port_free_or_ours "$SERVER_PORT" "$PID_SERVER" || die "端口 ${SERVER_PORT} 已被其他进程占用；请在 .env 或 .env.local 里改 SERVER_PORT 后重试。"
+
+  # 1) PG16
+  log "[1/6] 拉起 PostgreSQL 16（docker compose up -d postgres）"
+  compose_cmd up -d postgres 2>&1 | sed 's/^/    /'
+
+  log "[2/6] 等待 PG 健康检查"
+  local i=1
+  until [ "$(docker inspect -f '{{.State.Health.Status}}' "$CONTAINER_NAME" 2>/dev/null || echo starting)" = "healthy" ]; do
+    [ "$i" -le 60 ] || die "PG 在 60s 内未健康，可用 ./bin/campus-go logs 排查。"
+    sleep 1
+    i=$((i + 1))
+  done
+  log "PG 已 healthy"
+
+  # 2) 迁移 + seed（首次运行自动建库；二者均可重复执行）
+  [ -f "$SERVER_DIR/node_modules/.bin/prisma" ] || die "缺少 $SERVER_DIR/node_modules/.bin/prisma，请先运行 bash scripts/build-standalone.sh"
+  log "[3/6] prisma migrate deploy（建表 / 迁移，幂等）"
+  (cd "$SERVER_DIR" && ./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma) 2>&1 | sed 's/^/    /'
+
+  log "[4/6] seed 初始管理员（幂等）"
+  (cd "$SERVER_DIR" && ./node_modules/.bin/ts-node -r tsconfig-paths/register prisma/seed.ts) 2>&1 | sed 's/^/    /'
+
+  # 3) server
+  log "[5/6] 启动 NestJS server（端口 ${SERVER_PORT}）"
+  # exec 消除中间 shell，使 $! 就是 node 自身 PID（否则 stop 会只杀掉包装 shell，
+  # 留下孤儿 node 继续占端口）。stdin/stdout/stderr 全部脱离终端，避免管道等待 EOF。
+  (cd "$SERVER_DIR" && exec nohup node dist/main.js < /dev/null > "$LOG_DIR/server.log" 2>&1) &
+  echo $! > "$PID_SERVER"
+  sleep 1
+  pid_alive "$PID_SERVER" || { err "server 启动失败，日志："; tail -30 "$LOG_DIR/server.log" >&2; die "server 未启动"; }
+  wait_http "http://127.0.0.1:${SERVER_PORT}/api/activities" "server API" 60 || {
+    tail -30 "$LOG_DIR/server.log" >&2
+    die "server API 不可达"
+  }
+
+  # 4) web 静态托管（含 /api 反向代理）
+  [ -f "$STATIC_SERVER" ] || die "缺少 $STATIC_SERVER"
+  [ -f "$WEB_DIST/index.html" ] || die "缺少 $WEB_DIST/index.html，请先运行 bash scripts/build-standalone.sh"
+  log "[6/6] 启动 web 静态托管（端口 ${WEB_PORT}）"
+  export CAMPUS_GO_API_UPSTREAM="http://127.0.0.1:${SERVER_PORT}"
+  (exec nohup node "$STATIC_SERVER" "$WEB_DIST" "$WEB_PORT" < /dev/null > "$LOG_DIR/web.log" 2>&1) &
+  echo $! > "$PID_WEB"
+  sleep 1
+  pid_alive "$PID_WEB" || { err "web 启动失败，日志："; tail -30 "$LOG_DIR/web.log" >&2; die "web 未启动"; }
+  wait_http "http://127.0.0.1:${WEB_PORT}/" "web 首页" 30 || {
+    tail -30 "$LOG_DIR/web.log" >&2
+    die "web 首页不可达"
+  }
+
+  echo
+  log "===== CampusGo 已启动 ====="
+  printf '  官网首页   : http://localhost:%s/\n' "$WEB_PORT"
+  printf '  后端 API   : http://localhost:%s/api  （也可经 http://localhost:%s/api 访问）\n' "$SERVER_PORT" "$WEB_PORT"
+  printf '  Swagger    : http://localhost:%s/docs\n' "$SERVER_PORT"
+  printf '  状态/停止  : ./bin/campus-go status   /   ./bin/campus-go stop\n'
+}
+
+stop_processes() {
+  local f
+  for f in "$PID_WEB" "$PID_SERVER"; do
+    if [ -f "$f" ]; then
+      local pid
+      pid="$(cat "$f" 2>/dev/null || true)"
+      if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+        log "停止进程 pid=$pid"
+        kill "$pid" 2>/dev/null || true
+        local i=0
+        while kill -0 "$pid" 2>/dev/null && [ "$i" -lt 10 ]; do sleep 1; i=$((i + 1)); done
+        kill -9 "$pid" 2>/dev/null || true
+      fi
+      rm -f "$f"
+    fi
+  done
+
+  # 兜底：早期版本曾把中间 shell 的 PID 写进 pid 文件，杀掉后留下孤儿 node 继续
+  # 占端口。这里只清理「监听本次 server/web 端口、且命令行明确属于本包」的进程，
+  # 不触碰其他任务的服务。
+  local sp wp port pids cmd
+  sp="$(env_get SERVER_PORT || echo 3001)"
+  wp="$(env_get WEB_PORT || echo 5173)"
+  for port in "$sp" "$wp"; do
+    pids="$(port_pids "$port")"
+    for pid in $pids; do
+      cmd="$(ps -p "$pid" -o command= 2>/dev/null || true)"
+      # 只清理命令行里明确带有本包路径的进程，绝不误伤其他 clone / 任务的同名服务。
+      case "$cmd" in
+        *"$ROOT"*)
+          log "清理本包遗留进程 pid=$pid (端口 $port)"
+          kill "$pid" 2>/dev/null || true
+          sleep 1
+          kill -9 "$pid" 2>/dev/null || true
+          ;;
+      esac
+    done
+  done
+}
+
+cmd_stop() {
+  stop_processes
+  if [ -f "$COMPOSE_OVERRIDE" ] && [ -f "$ENV_FILE" ] && command -v docker >/dev/null 2>&1; then
+    PG_PORT="$(env_get POSTGRES_PORT || echo 5432)"
+    make_compose_override
+    log "停止 PostgreSQL 容器（保留数据卷 postgres-data）"
+    compose_cmd stop postgres 2>&1 | sed 's/^/    /' || warn "PG 容器停止失败（可能本就没在运行）"
+  fi
+  log "已停止。数据卷保留，下次 start 不会丢数据。"
+}
+
+cmd_status() {
+  echo "===== CampusGo 状态 ====="
+  if [ -f "$ENV_FILE" ]; then
+    printf '  配置 : %s\n' "$ENV_FILE"
+    printf '  端口 : PG=%s  server=%s  web=%s\n' \
+      "$(env_get POSTGRES_PORT || echo 5432)" "$(env_get SERVER_PORT || echo 3001)" "$(env_get WEB_PORT || echo 5173)"
+  else
+    echo "  配置 : 尚未初始化（先执行 ./bin/campus-go start）"
+  fi
+
+  local pg_state="未运行"
+  if command -v docker >/dev/null 2>&1; then
+    pg_state="$(docker inspect -f '{{.State.Status}}(health={{.State.Health.Status}})' "$CONTAINER_NAME" 2>/dev/null | tr -d '\n' || true)"
+    [ -n "$pg_state" ] || pg_state="未运行"
+  fi
+  printf '  PG   : %s\n' "$pg_state"
+
+  if pid_alive "$PID_SERVER"; then
+    printf '  server: 运行中 (pid=%s)  %s\n' "$(cat "$PID_SERVER")" \
+      "$(http_ok "http://127.0.0.1:$(env_get SERVER_PORT || echo 3001)/api/activities" && echo 'API 200 OK' || echo 'API 不可达')"
+  else
+    echo "  server: 未运行"
+  fi
+  if pid_alive "$PID_WEB"; then
+    printf '  web  : 运行中 (pid=%s)  %s\n' "$(cat "$PID_WEB")" \
+      "$(http_ok "http://127.0.0.1:$(env_get WEB_PORT || echo 5173)/" && echo '首页 200 OK' || echo '首页不可达')"
+  else
+    echo "  web  : 未运行"
+  fi
+}
+
+cmd_logs() {
+  echo "===== server.log ====="; tail -n "${1:-40}" "$LOG_DIR/server.log" 2>/dev/null || echo "(无日志)"
+  echo "===== web.log ====="; tail -n "${1:-40}" "$LOG_DIR/web.log" 2>/dev/null || echo "(无日志)"
+}
+
+case "${1:-}" in
+  start)   cmd_start ;;
+  stop)    cmd_stop ;;
+  restart) cmd_stop; cmd_start ;;
+  status)  cmd_status ;;
+  logs)    cmd_logs "${2:-}" ;;
+  *)
+    printf '用法: %s {start|stop|restart|status|logs [行数]}\n' "$0"
+    printf '详见 docs/STANDALONE.md\n'
+    exit 1
+    ;;
+esac

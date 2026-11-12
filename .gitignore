@@ -18,3 +18,6 @@ playwright/.cache/
 blob-report/
 .pnpm-store/
 *.local
+# ---- 独立启动器运行期产物（不入仓，含合并后的 .env）----
+.run/
+.logs/
