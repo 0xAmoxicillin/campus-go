@@ -26,7 +26,7 @@ pnpm typecheck      # tsc --noEmit
 
 ## Mock → 真实 API 切换
 
-- 默认走 mock adapter（`VITE_USE_MOCK` 缺省为 `true`），**不真实调用 `/api`**，可离线跑通全部页面与契约。
+- 默认接真实后端 API（`VITE_USE_MOCK` 缺省为 `false`，见 `src/api/apiClient.ts` 的 `?? 'false'`），真实调用 `/api`；置 `VITE_USE_MOCK=true` 才回退 mock adapter，零后端即可看完整界面。
 - 切真实后端：在 `.env`（本地，`gitignore` 已忽略，勿提交）或 shell 中设置：
   ```bash
   VITE_USE_MOCK=false
