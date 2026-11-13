@@ -4,16 +4,16 @@
   <img alt="status" src="https://img.shields.io/badge/status-M2%20%E5%AE%9E%E7%8E%B0%E5%8A%9F%E8%83%BD-blue" />
   <img alt="stack" src="https://img.shields.io/badge/stack-React%2018%20%2F%20NestJS%20%2F%20Prisma%20%2F%20PG16-4f46e5" />
   <img alt="license" src="https://img.shields.io/badge/license-MIT-2dd4bf" />
-  <img alt="private" src="https://img.shields.io/badge/repo-PRIVATE-fbbf24" />
+  <img alt="visibility" src="https://img.shields.io/badge/repo-OPEN%20SOURCE-2dd4bf" />
 </p>
 
 > **一套拿来即套用的校园官网 + 后台展示模版**：改品牌名与文案、换内容数据即可复用；官网、登录注册、RBAC 后台、真实接口与 E2E 全链路已经串好。
 
-这是一个**可复用的官网 / 后台展示模板**（不是某个内部系统的一次性交付）。主题是「校园行」，但你完全可以把它换成社团、赛事、实验室或任意活动的官网：品牌与站点文案集中、内容数据独立、主题走设计令牌，前后端分离且默认对接真实 API。仓库**保持 PRIVATE**；真实产品界面的录屏与截图都在仓库内，`clone` 后用本地相对路径即可打开，不依赖任何在线服务。
+这是一个**可复用的官网 / 后台展示模板**（不是某个内部系统的一次性交付）。主题是「校园行」，但你完全可以把它换成社团、赛事、实验室或任意活动的官网：品牌与站点文案集中、内容数据独立、主题走设计令牌，前后端分离且默认对接真实 API。本仓库为**开源仓库**；真实产品界面的录屏与截图都在仓库内，`clone` 后用本地相对路径即可离线打开（仓库内相对路径素材零外部请求）。
 
 ## ▶ 产品演示（真实界面录屏 · 仓库内相对路径）
 
-在仓库主页即可**就地播放**下面的真实产品界面录屏：点击播放器直接在本页观看，无需跳转到文件页或下载（MP4 / H.264，约 79 秒；仓库为 PRIVATE，观看需具备本仓访问权限）。
+在仓库主页即可**就地播放**下面的真实产品界面录屏：点击播放器直接在本页观看，无需跳转到文件页或下载（MP4 / H.264，约 79 秒；仓库已开源，点击即可播放）。
 
 https://github.com/user-attachments/assets/3d722e67-edf1-48ec-a9fe-e82f5cba2b3a
 
@@ -24,6 +24,7 @@ https://github.com/user-attachments/assets/3d722e67-edf1-48ec-a9fe-e82f5cba2b3a
 - **录屏来源**：真实运行的 `apps/web` SPA，接真实全栈（Docker PG16 → `prisma migrate deploy` → `seed` → NestJS `3001` + Vite `5173`），录制时 `VITE_USE_MOCK` 不置 `true`，默认对接真实 API；前端为含 Fix-B（单点响应解包 + 品牌配置抽取）的最新 tip。画面依次展示官网首页 Hero 与活动/资讯卡片、活动列表与详情、注册/登录、管理员后台左栏 dashboard、用户管理（含 RBAC 安全边界提示）、活动管理的一次完整「新建 → 编辑 → 删除」（真实接口落库，可见「活动已创建 / 已更新 / 已删除」提示）、资讯管理，最后回到官网首页便于循环。
 - **规格**：WebM（VP9）· 约 79 秒 · 1280×800 · 中文硬字幕 + AI 中文旁白 + 轻音乐 · 约 6.2 MB。用仓库已装的 Playwright（`@playwright/test` 1.63.0 + Chromium）`recordVideo` 录制，脚本见 [`scripts/capture-demo.mjs`](scripts/capture-demo.mjs)；录制时屏蔽一切外部请求，封面图用内联 SVG。
 - **画面边界**：未出现真实密码、密钥、`.env` 内容或个人信息；管理员账号只在本地临时 `.env`（已被 `.gitignore`）里供录制时登录，不入库。
+- **播放说明**：上方为 GitHub 托管的在线内联播放（需联网访问 GitHub 资产），下方 `docs/demo.webm` 为仓库内离线副本，二者内容一致；离线打开时所有画面素材（封面图等）均随仓库提供、零外部请求。
 
 下面是**对运行中的 `apps/web` 实际截取**的 5 张截图（无头 Chromium，1280×800），不是占位图、不是外链、不是另画的 UI：
 
@@ -66,7 +67,7 @@ https://github.com/user-attachments/assets/3d722e67-edf1-48ec-a9fe-e82f5cba2b3a
 前置：Node 20+、pnpm 9+、Docker（含 Compose 插件）。
 
 ```bash
-git clone https://github.com/0xAmoxicillin/campus-go.git     # 私有仓，需有权限
+git clone https://github.com/0xAmoxicillin/campus-go.git     # 开源仓库，直接 clone
 cd campus-go
 cp .env.example .env                 # 按文件内注释替换占位符；.env 已被忽略，切勿提交
 docker compose up -d                 # 启动 PostgreSQL 16
@@ -122,7 +123,7 @@ pnpm --filter @campus-go/web run dev            # http://localhost:5173   · VIT
 
 ## 如何套用到自己的项目
 
-1. **clone 本模板**：`git clone … && cd campus-go`（私有仓，需权限；转公开由仓库所有者决定）。
+1. **clone 本模板**：`git clone … && cd campus-go`（开源仓库，直接 clone）。
 2. **改品牌 / 站点文案**：
    - 产品名与页面 `<title>`：`apps/web/index.html`；
    - 导航 / 页脚 / Hero Slogan / 栏目文案：`apps/web/src/components/layout/` 与 `apps/web/src/pages/`；
@@ -164,7 +165,7 @@ pnpm --filter @campus-go/web run dev            # http://localhost:5173   · VIT
 - **接口级边界**：`JwtAuthGuard + RolesGuard` 兜底，`/api/admin/**` 未登录 `401/40100`、USER 越权 `403/40300`；前端路由守卫只做体验分流。
 - **口令与密钥**：密码 bcrypt 哈希后落库，绝不落明文、不进日志与响应；JWT 短时 access(15m) + refresh(7d) 轮换；`JWT_*`、`POSTGRES_PASSWORD`、`ADMIN_SEED_PASSWORD` 全部从 `.env` 读取，`.env` 已 `.gitignore`，**绝不入库**。
 - **登录保护**：登录限流（42900）、CORS 白名单、Swagger 每接口标注所需角色。
-- **本仓状态**：PRIVATE；未开 Pages、未编造任何在线演示/视频链接；真实界面录屏与截图都在仓库内，用本地相对路径打开，零外部请求。
+- **本仓状态**：开放源代码（OPEN SOURCE）；演示视频以仓库内 `docs/demo.webm` + 上文内联播放两种形式提供，均未编造任何第三方在线演示/视频链接；真实界面录屏与截图都在仓库内，用本地相对路径离线打开时零外部请求。
 
 ## 目录结构
 
@@ -205,7 +206,7 @@ campus-go/
 4. `pnpm exec playwright install --with-deps chromium` + `pnpm run test:e2e:contract`（M1 契约结构回归，拦截层，无需服务）。
 5. 版本一致性报告（**非阻塞**，`continue-on-error`）。
 
-另有 `e2e-real` job：用 PG16 service 容器 → `prisma migrate deploy` → `seed` → 后台启动 NestJS(3001) + Vite(5173) → `pnpm run test:e2e:real` 打真实接口与页面。**它只在 `develop`/`main` 的 push（三路 M2 代码合并态）或手动 `workflow_dispatch` 时运行**：单个并行 feature PR 缺另外两路代码，跑真实联通必然失败且失败与本次改动无关，故不伪装全绿；合并态 CI 是否全绿由项目组长合并后实跑验证。
+另有 `e2e-real` job：用 PG16 service 容器 → `prisma migrate deploy` → `seed` → 后台启动 NestJS(3001) + Vite(5173) → `pnpm run test:e2e:real` 打真实接口与页面。**它只在 `develop`/`main` 的 push（三路 M2 代码合并态）或手动 `workflow_dispatch` 时运行**：单个并行 feature PR 缺另外两路代码，跑真实联通必然失败且失败与本次改动无关，故不伪装全绿；合并态 CI 是否全绿由维护者在合并后实跑验证。
 
 本地复现 CI 质量步骤（顺序与 `ci.yml` 一致）：
 
@@ -241,12 +242,12 @@ E2E_START_SERVICES=1 ADMIN_SEED_PASSWORD='<.env 中的值>' pnpm run test:e2e:re
 ## 里程碑状态
 
 - **M1 完成**：契约先行（`packages/shared` + Prisma schema/migration + Swagger）、前端设计系统与官网静态页 + mock adapter、根 workspace + CI 门禁 + E2E 骨架 + 版本一致性脚本，三路 PR 已合并到 `develop`（基准 `de8e05e`）。
-- **M2 真实功能**：后端 Auth/RBAC/Admin CRUD、前端官网实接 + **左栏 dashboard 后台**、全栈真实服务 E2E + CI 门禁切 `--frozen-lockfile` + 详细版 README + 真实 `apps/web` 界面录屏与 5 张实际截图，三路并行 PR 对 `develop` 开出，待项目组长逐行 Review 后合并。
+- **M2 真实功能**：后端 Auth/RBAC/Admin CRUD、前端官网实接 + **左栏 dashboard 后台**、全栈真实服务 E2E + CI 门禁切 `--frozen-lockfile` + 详细版 README + 真实 `apps/web` 界面录屏与 5 张实际截图，三路并行 PR 对 `develop` 开出，待维护者逐行 Review 后合并。
 - **M3+ 展望**：三方合并态 CI 实跑验证与版本一致性硬门禁、Docker 多阶段镜像与部署/回滚脚本、性能与 3D 视觉打磨、可访问性与 Lighthouse 达标。
 
 ## 协作与流程
 
-- 私有仓免费套餐无法启用平台分支保护，改由流程门禁：禁止直接 push `main` / `develop`；`feature/*` → 对 `develop` 开 PR → CI 绿 + 项目组长逐行 Review 批准 → 由项目组长合并。
+- 本仓库采用流程门禁（无论是否付费套餐均可启用）：禁止直接 push `main` / `develop`；`feature/*` → 对 `develop` 开 PR → CI 绿 + 维护者逐行 Review 批准 → 由维护者合并。
 - 约定式提交，提交信息结尾 `Co-Authored-By: Claude Code <noreply@anthropic.com>`；PR 描述结尾 `🤖 Generated with [Claude Code](https://claude.com/claude-code)`。
 - 三份受控文档（`design-v0.1.md` / `api-contract-v0.1.md` / `collaboration-v0.1.md`）禁改；契约变更必须走 PR 通知全组。
 

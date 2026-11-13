@@ -1,7 +1,7 @@
-# Release Notes 草稿 · CampusGo 校园行 v0.2.0（M2）
+# Release Notes · CampusGo 校园行 v0.2.0（M2）
 
-> 本文是 GitHub Release 正文草稿，供负责人在 **CI 真实联通门禁转绿后** 统一发布时定稿使用。
-> 截至本草稿：未打 tag、未发 Release、未改根 `package.json` 版本号（仍为 `0.1.0`）。仓库为 PRIVATE，不开 GitHub Pages。
+> 本文是 GitHub Release 正文，记录 v0.2.0 的发布信息（已于 2026-11-12 发布 tag `v0.2.0` 与 Release）。
+> 发布状态：已打 tag、已发 Release，根 `package.json` 版本号 `0.2.0`；本仓库为开放源代码仓库，GitHub Pages 是否开启另行决定。
 
 ---
 
@@ -60,15 +60,15 @@ CI 中由 `ci.yml` 的 `e2e-real` job 在 postgres service 容器下注入环境
 
 ## 已知边界（如实，不夸大）
 
-- **真实联通门禁状态**：合并态的 `e2e-real` 真实服务联通在另路修复中，截至本草稿**未全绿**；PR 阶段的 `e2e-real` 是真实服务套件，仅在有真实 PG16 + server + web 时运行，**不得将「PR 阶段 e2e-real 被跳过 / 未全绿」描述为联调已通过**。
+- **真实联通门禁状态（截至 2026-11-12 发版时快照）**：发版时合并态的 `e2e-real` 真实服务联通在另路修复中、未全绿；PR 阶段的 `e2e-real` 是真实服务套件，仅在有真实 PG16 + server + web 时运行，不将其误读为联调已通过。此为发版时历史状态，不代表当前实时 CI 状态。
 - **M1 阶段 E2E** 为契约结构回归（page.route 拦截层），验证端点存在性与响应形状，不依赖真实服务；M2 新增的真实联通 E2E 与之互不替代、互不假装。
 - 真实注册 / 登录 / JWT / CRUD **需要完整后端（PG16）**；`VITE_USE_MOCK=true` 仅为前端展示，不落真实数据库。
-- 当前发布版本号规划为 `v0.2.0`（功能增量升 MINOR），但根 `package.json` 仍为 `0.1.0`，实际打 tag 与发 Release 待 CI 转绿后统一执行。
+- 当前已发布 `v0.2.0`（功能增量升 MINOR），根 `package.json` 版本号 `0.2.0`，tag 与 Release 已发布。
 
 ---
 
 ## 红线（仓库策略）
 
-- 仓库 **PRIVATE**，不开 GitHub Pages。
+- 仓库 **开放源代码（OPEN SOURCE）**，GitHub Pages 是否开启另行决定。
 - 不提交 `.env` 或任何真实密钥 / 口令；CI 凭据均为 CI 专用公开占位值或单次运行随机生成，不落仓库、不打印。
 - 三份受控文档（`docs/api-contract-v0.1.md` / `docs/collaboration-v0.1.md` / `docs/design-v0.1.md`）、`schema.prisma`、`README.md`、`packages/shared` 与 CI 配置在 M2 中未改动；本次仅新增文档。

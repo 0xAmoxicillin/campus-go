@@ -26,7 +26,7 @@ export const siteConfig = {
   /** 页脚联系邮箱。 */
   contactEmail: 'hello@campusgo.local',
   /** 页脚版权行。 */
-  copyright: '© 2026 校园行 CampusGo · 私有仓库演示',
+  copyright: '© 2026 校园行 CampusGo',
   /** 官网公开导航（Navbar + Footer 共用）。 */
   nav: [
     { to: '/', label: '首页' },

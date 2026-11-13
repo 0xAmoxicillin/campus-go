@@ -8,9 +8,9 @@
 - 功能性增量（新增可用能力、新端点、新模块）升级 **MINOR**（如 `0.1.0 → 0.2.0`）。
 - 仅修复缺陷、补文档、调整内部实现而不改外部契约时升级 **PATCH**（如 `0.2.0 → 0.2.1`）。
 - 破坏性变更（改动既有接口契约、删除字段、改认证方式）升级 **MAJOR**（进入 `1.0.0`）。
-- Git tag 命名统一为 `vX.Y.Z`（例：`v0.1.0`、`v0.2.0`），由 CI 在合并态转绿后统一打标与发 Release；本仓库为 PRIVATE，不开 GitHub Pages。
+- Git tag 命名统一为 `vX.Y.Z`（例：`v0.1.0`、`v0.2.0`），由 CI 在合并态转绿后统一打标与发 Release；本仓库为开放源代码仓库，GitHub Pages 是否开启另行决定。
 
-> 说明：截至本记录，根 `package.json` 版本仍为 `0.1.0`，**未改版本号、未打 tag、未发 Release**。M2 作为功能增量，其发布版本号规划为 `v0.2.0`，但实际打标动作待 CI 真实联通门禁转绿后由负责人统一执行。
+> 说明：已于 2026-11-12 发布 `v0.2.0`（tag `v0.2.0`，Release 已发布），根 `package.json` 版本为 `0.2.0`。M2 作为功能增量，版本号已升 MINOR。
 
 ---
 
@@ -72,6 +72,6 @@
 
 ## 链接
 
-- 仓库（PRIVATE）：`https://github.com/0xAmoxicillin/campus-go`
+- 仓库（开放源代码）：`https://github.com/0xAmoxicillin/campus-go`
 - 受控文档：契约 `docs/api-contract-v0.1.md`、协作规范 `docs/collaboration-v0.1.md`、设计 `docs/design-v0.1.md`
 - 本地启动与验证：见 `README.md`「真实模式」与「演示模式」
