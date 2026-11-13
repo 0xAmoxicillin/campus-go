@@ -47,8 +47,22 @@ export function PostFormModal({ open, post, submitting, onClose, onSubmit }: Pos
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title={isEdit ? '编辑资讯' : '新建资讯'}>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title={isEdit ? '编辑资讯' : '新建资讯'}
+      footer={
+        <>
+          <Button variant="ghost" size="sm" type="button" onClick={handleClose}>
+            取消
+          </Button>
+          <Button variant="primary" size="sm" type="submit" form="post-form" disabled={submitting}>
+            {submitting ? '保存中…' : isEdit ? '保存修改' : '创建资讯'}
+          </Button>
+        </>
+      }
+    >
+      <form id="post-form" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
         <Input
           label="标题"
           placeholder="例如：校园行上线啦"
@@ -70,21 +84,13 @@ export function PostFormModal({ open, post, submitting, onClose, onSubmit }: Pos
           {...register('content')}
         />
         <Input
-          label="封面图 URL"
-          placeholder="https://…"
+          label="封面图（本地 /covers 路径或后端图床地址）"
+          placeholder="/covers/campus-launch.webp"
           icon={<ImageIcon width={18} height={18} />}
           error={errors.coverUrl?.message}
           {...register('coverUrl')}
         />
         <Select label="状态" options={statusOptions} error={errors.status?.message} {...register('status')} />
-        <div className="flex justify-end gap-2 pt-1">
-          <Button variant="ghost" size="sm" type="button" onClick={handleClose}>
-            取消
-          </Button>
-          <Button variant="primary" size="sm" type="submit" disabled={submitting}>
-            {submitting ? '保存中…' : isEdit ? '保存修改' : '创建资讯'}
-          </Button>
-        </div>
       </form>
     </Modal>
   );

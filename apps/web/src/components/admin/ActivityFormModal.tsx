@@ -65,8 +65,22 @@ export function ActivityFormModal({ open, activity, submitting, onClose, onSubmi
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title={isEdit ? '编辑活动' : '新建活动'}>
-      <form onSubmit={handleSubmit(submit)} noValidate className="space-y-4">
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title={isEdit ? '编辑活动' : '新建活动'}
+      footer={
+        <>
+          <Button variant="ghost" size="sm" type="button" onClick={handleClose}>
+            取消
+          </Button>
+          <Button variant="primary" size="sm" type="submit" form="activity-form" disabled={submitting}>
+            {submitting ? '保存中…' : isEdit ? '保存修改' : '创建活动'}
+          </Button>
+        </>
+      }
+    >
+      <form id="activity-form" onSubmit={handleSubmit(submit)} noValidate className="space-y-4">
         <Input
           label="标题"
           placeholder="例如：校园开放日 · 实验室漫游"
@@ -88,8 +102,8 @@ export function ActivityFormModal({ open, activity, submitting, onClose, onSubmi
           {...register('content')}
         />
         <Input
-          label="封面图 URL"
-          placeholder="https://…"
+          label="封面图（本地 /covers 路径或后端图床地址）"
+          placeholder="/covers/campus-open-day.webp"
           icon={<ImageIcon width={18} height={18} />}
           error={errors.coverUrl?.message}
           {...register('coverUrl')}
@@ -126,14 +140,6 @@ export function ActivityFormModal({ open, activity, submitting, onClose, onSubmi
             {...register('capacity', { valueAsNumber: true })}
           />
           <Select label="状态" options={statusOptions} error={errors.status?.message} {...register('status')} />
-        </div>
-        <div className="flex justify-end gap-2 pt-1">
-          <Button variant="ghost" size="sm" type="button" onClick={handleClose}>
-            取消
-          </Button>
-          <Button variant="primary" size="sm" type="submit" disabled={submitting}>
-            {submitting ? '保存中…' : isEdit ? '保存修改' : '创建活动'}
-          </Button>
         </div>
       </form>
     </Modal>

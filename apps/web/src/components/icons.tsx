@@ -139,4 +139,22 @@ export const ImageIcon = (p: IconProps) => (
     <path d="m21 15-5-5L5 21" />
   </svg>
 );
+export const TrendingUpIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M3 17l6-6 4 4 8-8" />
+    <path d="M17 7h4v4" />
+  </svg>
+);
+export const PieChartIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 3a9 9 0 1 0 9 9h-9z" />
+    <path d="M12 3v9h9A9 9 0 0 0 12 3z" />
+  </svg>
+);
+export const ClockIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </svg>
+);
 

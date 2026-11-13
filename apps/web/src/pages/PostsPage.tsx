@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Container, Section } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
+import { CoverImage } from '@/components/ui/CoverImage';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { PageHeader, EmptyState, Pagination } from '@/components/common/PageHeader';
@@ -50,7 +51,7 @@ export function PostsPage() {
               {items.map((p, i) => (
                 <Reveal key={p.id} delay={i * 0.04}>
                   <Card tilt={!reduced} className="flex h-full flex-col overflow-hidden">
-                    <img src={p.coverUrl} alt={p.title} loading="lazy" className="h-40 w-full object-cover" />
+                    <CoverImage src={p.coverUrl} alt={p.title} className="h-40 w-full object-cover" />
                     <div className="flex flex-1 flex-col p-5">
                       <h3 className="font-semibold text-ink">{p.title}</h3>
                       <p className="mt-2 line-clamp-2 flex-1 text-sm text-ink-soft">{p.summary}</p>
