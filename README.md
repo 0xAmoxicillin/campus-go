@@ -15,7 +15,7 @@
 
 在仓库主页即可**就地播放**下面的真实产品界面录屏：点击播放器直接在本页观看，无需跳转到文件页或下载（MP4 / H.264，约 79 秒；仓库已开源，点击即可播放）。
 
-https://github.com/user-attachments/assets/3d722e67-edf1-48ec-a9fe-e82f5cba2b3a
+https://github.com/user-attachments/assets/a4e52697-3069-4f3a-a1e2-4599948c3b85
 
 [![点击打开真实 apps/web 界面录屏](docs/screenshot-01-home.png)](docs/demo.webm)
 
