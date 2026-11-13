@@ -3,12 +3,12 @@
  * M1 临时契约 shim（TEMPORARY CONTRACT SHIM）
  * ============================================================================
  * 本文件是 docs/api-contract-v0.1.md（统一接口契约 v0.1）的「前端临时副本」，
- * 用于 M1 在 packages/shared 尚未就绪（由后端工程师在并行 PR 中创建）之前
+ * 用于 M1 在 packages/shared 尚未就绪（由服务端维护者在并行 PR 中创建）之前
  * 先行并行开发。它是 M1 阶段的单一事实来源副本，**不是** 契约本身。
  *
  * 契约唯一事实来源：docs/api-contract-v0.1.md（禁止私自改字段）。
  *
- * ⚠️ M2 替换计划（由 @项目组长 统一安排）：
+ * ⚠️ M2 替换计划（由维护者统一安排）：
  *   1. 删除本文件与 src/contracts/ 下的 mock 相关 shim；
  *   2. 改为 `import type { ... } from '@campus-go/shared'`；
  *   3. 校验 shared 类型与本 shim 逐字段一致后，删除本文件头注释中的 TODO。

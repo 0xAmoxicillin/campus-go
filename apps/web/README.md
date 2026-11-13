@@ -62,7 +62,7 @@ pnpm typecheck      # tsc --noEmit
 - 契约唯一事实来源是 **`docs/api-contract-v0.1.md`**，禁止私自改字段。
 - M1 因 `packages/shared` 由后端在并行 PR 创建、本分支不存在，故在 `src/contracts/api-contract.ts`
   维护一份**临时类型 shim**（含 DTO、ErrorCode、分页、角色枚举），文件头已明确标注「M1 临时 shim」。
-- **M2 替换步骤（由 @项目组长 统一安排）**：
+- **M2 替换步骤（由维护者统一安排）**：
   1. 删除 `src/contracts/` 下本 shim；
   2. 改为 `import type { ... } from '@campus-go/shared'`；
   3. 校验 shared 类型与本 shim 逐字段一致后删除头部 TODO。

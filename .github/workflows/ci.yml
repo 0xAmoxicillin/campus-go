@@ -5,7 +5,7 @@ on:
     branches: [main, develop, 'feature/**', 'fix/**']
   pull_request:
     branches: [main, develop]
-  # 项目组长合并三路 M2 代码后，可手动对合并态 develop 触发真实服务 E2E 实跑验证。
+  # 维护者合并三路 M2 代码后，可手动对合并态 develop 触发真实服务 E2E 实跑验证。
   workflow_dispatch:
 
 jobs:
@@ -89,7 +89,7 @@ jobs:
   # 三份 package.json 已齐全，但 M2 后端业务实现 / 前端实接分别由另外两个并行 PR
   # 交付。任何单个 feature PR 都缺另外两路代码，此时跑真实服务 E2E 必然失败，
   # 且失败原因与本次改动无关。故本 job 只在 develop / main 的 push（即三路合并态）
-  # 或项目组长手动 workflow_dispatch 时运行；合并态 CI 是否全绿由组长合并后实跑
+  # 或维护者手动 workflow_dispatch 时运行；合并态 CI 是否全绿由维护者合并后实跑
   # 验证。quality-gate 仍对每个 PR 全量运行，不会被跳过。
   #
   # 所有口令都是**CI 专用的公开字面占位值或本次运行随机生成**，仅存在于该次

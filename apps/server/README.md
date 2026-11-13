@@ -1,8 +1,8 @@
 # CampusGo 后端服务（apps/server）
 
-NestJS + TypeScript + Prisma + PostgreSQL 16。本目录由**后端工程师**维护，M1 交付范围：契约（Swagger）、Prisma schema/migration、服务端基础设施、管理员种子脚本。
+NestJS + TypeScript + Prisma + PostgreSQL 16。本目录由**服务端维护者**维护，M1 交付范围：契约（Swagger）、Prisma schema/migration、服务端基础设施、管理员种子脚本。
 
-> 文件所有权边界（协作规范 v0.1）：你只应改动 `apps/server/**` 与 `packages/shared/**`。根 `package.json` / `pnpm-workspace.yaml` / `docker-compose.yml` / `.github/**` / `scripts/**` / 根 `README.md` 归全栈工程师；`apps/web/**` 归前端；`docs/**` 三份为受控文档，M1 不改。
+> 文件所有权边界（协作规范 v0.1）：你只应改动 `apps/server/**` 与 `packages/shared/**`。根 `package.json` / `pnpm-workspace.yaml` / `docker-compose.yml` / `.github/**` / `scripts/**` / 根 `README.md` 由仓库维护者统一管理；`apps/web/**` 由前端维护者负责；`docs/**` 三份为受控文档，M1 不改。
 
 ## 技术栈与版本
 
