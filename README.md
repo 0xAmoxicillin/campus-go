@@ -13,6 +13,10 @@
 
 ## ▶ 产品演示（真实界面录屏 · 仓库内相对路径）
 
+在仓库主页即可**就地播放**下面的真实产品界面录屏：点击播放器直接在本页观看，无需跳转到文件页或下载（MP4 / H.264，约 79 秒；仓库为 PRIVATE，观看需具备本仓访问权限）。
+
+https://github.com/user-attachments/assets/3d722e67-edf1-48ec-a9fe-e82f5cba2b3a
+
 [![点击打开真实 apps/web 界面录屏](docs/screenshot-01-home.png)](docs/demo.webm)
 
 **[`docs/demo.webm` · 点击打开真实产品界面录屏](docs/demo.webm)** —— `clone` 后用本地相对路径点开即可播放（中文硬字幕 + AI 中文旁白 + 轻音乐、循环友好；不联网、无 CDN、无外部字体/图片，零外部请求）。
