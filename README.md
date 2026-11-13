@@ -15,10 +15,10 @@
 
 [![点击打开真实 apps/web 界面录屏](docs/screenshot-01-home.png)](docs/demo.webm)
 
-**[`docs/demo.webm` · 点击打开真实产品界面录屏](docs/demo.webm)** —— `clone` 后用本地相对路径点开即可播放（静音、无旁白、循环友好；不联网、无 CDN、无外部字体/图片，零外部请求）。
+**[`docs/demo.webm` · 点击打开真实产品界面录屏](docs/demo.webm)** —— `clone` 后用本地相对路径点开即可播放（中文硬字幕 + AI 中文旁白 + 轻音乐、循环友好；不联网、无 CDN、无外部字体/图片，零外部请求）。
 
 - **录屏来源**：真实运行的 `apps/web` SPA，接真实全栈（Docker PG16 → `prisma migrate deploy` → `seed` → NestJS `3001` + Vite `5173`），录制时 `VITE_USE_MOCK` 不置 `true`，默认对接真实 API；前端为含 Fix-B（单点响应解包 + 品牌配置抽取）的最新 tip。画面依次展示官网首页 Hero 与活动/资讯卡片、活动列表与详情、注册/登录、管理员后台左栏 dashboard、用户管理（含 RBAC 安全边界提示）、活动管理的一次完整「新建 → 编辑 → 删除」（真实接口落库，可见「活动已创建 / 已更新 / 已删除」提示）、资讯管理，最后回到官网首页便于循环。
-- **规格**：WebM（VP8）· 约 40 秒 · 1280×800 · 静音、无旁白 · 约 2.5 MB。用仓库已装的 Playwright（`@playwright/test` 1.63.0 + Chromium）`recordVideo` 录制，脚本见 [`scripts/capture-demo.mjs`](scripts/capture-demo.mjs)；录制时屏蔽一切外部请求，封面图用内联 SVG。
+- **规格**：WebM（VP9）· 约 79 秒 · 1280×800 · 中文硬字幕 + AI 中文旁白 + 轻音乐 · 约 6.2 MB。用仓库已装的 Playwright（`@playwright/test` 1.63.0 + Chromium）`recordVideo` 录制，脚本见 [`scripts/capture-demo.mjs`](scripts/capture-demo.mjs)；录制时屏蔽一切外部请求，封面图用内联 SVG。
 - **画面边界**：未出现真实密码、密钥、`.env` 内容或个人信息；管理员账号只在本地临时 `.env`（已被 `.gitignore`）里供录制时登录，不入库。
 
 下面是**对运行中的 `apps/web` 实际截取**的 5 张截图（无头 Chromium，1280×800），不是占位图、不是外链、不是另画的 UI：
@@ -179,7 +179,7 @@ campus-go/
 │   ├── capture-demo.mjs               # 真实 apps/web 界面录屏 / 截图脚本（Playwright）
 │   └── check-version-consistency.sh   # 版本一致性报告（非阻塞）
 ├── docs/
-│   ├── demo.webm            # 真实 apps/web 界面录屏（WebM/VP8，静音、无旁白）
+│   ├── demo.webm            # 真实 apps/web 界面录屏（WebM/VP9，中文硬字幕 + AI 中文旁白 + 轻音乐）
 │   ├── screenshot-*.png     # 对运行中 apps/web 实际截取的 5 张真实截图
 │   ├── design-v0.1.md / api-contract-v0.1.md / collaboration-v0.1.md  # 受控文档，禁改
 ├── .github/workflows/ci.yml # 质量门禁 + 真实服务 E2E job

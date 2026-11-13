@@ -39,7 +39,7 @@ bash scripts/build-standalone.sh
 
 ```
 dist/standalone/                              单一可分发目录
-dist/campus-go-standalone-0.1.0.tar.gz        供 GitHub Release 附件使用
+dist/campus-go-standalone-0.2.0.tar.gz        供 GitHub Release 附件使用
 ```
 
 `dist/standalone/` 内含：启动器 `bin/campus-go`、静态服务器 `bin/static-server.cjs`、
