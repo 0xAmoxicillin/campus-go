@@ -43,6 +43,7 @@
 - **后台左栏 dashboard**：左侧固定模块导航 + 右侧内容区，用户 / 活动 / 资讯管理分栏清晰。
 - **测试与门禁**：Playwright 契约结构回归 + 真实服务 E2E、CI 三包齐全后的真实 lint/typecheck/test/build 门禁、版本一致性报告。
 - **立体视觉**：玻璃拟态 + 多层景深 + 3D tilt + 视差微动效，移动端优先并支持 `prefers-reduced-motion` 降级。
+- **独立分发包 / 一键启动**：见 [`docs/STANDALONE.md`](docs/STANDALONE.md)（构建脚本、启动器、前置依赖与实跑验证命令）。
 
 ## 技术栈
 
